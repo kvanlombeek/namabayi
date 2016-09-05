@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <title>Name app</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/slider.css">
+
+
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+      .radio_label{
+        font-weight:normal;
+      }
+      #result_row_shown{
+        display:block;
+      }
+      #result_row_hidden{
+        display:none;
+      }
+      .kpi_title{
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: black;
+      }
+/*      .star_filled {
+          color: yellow;
+          -webkit-text-stroke-width: 0.5px;
+          -webkit-text-stroke-color: orange;
+      }*/
+      .stars{
+        padding:0px;
+      }
+      #info_icon_trending{
+        display:inline;
+        vertical-align: super;
+        font-size: 0.8em;
+
+      }
+/*      p {
+          display: none;
+          background-color: yellow;
+          padding: 20px;
+      }
+      #info_icon_trending:hover p,
+      #info_icon_trending:focus p{
+          display: block;
+      }*/
+
+
+    </style>
+
+  </head>
+  <body>
+
+    <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Pick A Name .be</a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li><a href="#">Look up a name</a></li>
+              <li class="active"><a href="#">Suggest a name</a></li>
+              <li><a href="/about">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </nav>
+      <div class="container" id="app_suggestions">
+        <div class="row">
+          <div class="col-xs-12 text-center">
+            <h2>Give us some guidance:</h2>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"></div>
+          <div class="col-xs-4 text-center">Minumum</div>
+          <div class="col-xs-4 text-center">Maximum</div>
+        </div>      
+        <div class="row">
+          <div class="col-xs-4 text-center">Origineel: </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':score_original['min'][1]['full'],
+                                'fa-star-half-o':score_original['min'][1]['half_empty'],
+                                'fa-star-o':score_original['min'][1]['empty']}" 
+                                v-on:click="greet" id="original_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['min'][2]['full'],
+                                            'fa-star-half-o star_filled':score_original['min'][2]['half_empty'],
+                                            'fa-star-o':score_original['min'][2]['empty']}"></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['min'][3]['full'],
+                                            'fa-star-half-o':score_original['min'][3]['half_empty'],
+                                            'fa-star-o':score_original['min'][3]['empty']}"></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['min'][4]['full'],
+                                            'fa-star-half-o':score_original['min'][4]['half_empty'],
+                                            'fa-star-o':score_original['min'][4]['empty']}"></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':score_original['max'][1]['full'],
+                                            'fa-star-half-o':score_original['max'][1]['half_empty'],
+                                            'fa-star-o':score_original['max'][1]['empty']}"></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['max'][2]['full'],
+                                            'fa-star-half-o':score_original['max'][2]['half_empty'],
+                                            'fa-star-o':score_original['max'][2]['empty']}"></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['max'][3]['full'],
+                                            'fa-star-half-o':score_original['max'][3]['half_empty'],
+                                            'fa-star-o':score_original['max'][3]['empty']}"></span>
+            <span class="fa" v-bind:class="{'fa-star':score_original['max'][4]['full'],
+                                            'fa-star-half-o':score_original['max'][4]['half_empty'],
+                                            'fa-star-o':score_original['max'][4]['empty']}"></span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center">Populair: </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center">Klassiek: </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center">Vintage: </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center">Trending: </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"># Letters: </div>
+        </div>
+      </div>
+
+
+    <!-- Vue.js -->
+    <script src="javascript/vue.js"></script>
+
+    <!-- jQuery.js -->
+    <script   src="javascript/jquery.js"></script>
+    
+    <!-- bootstrap javascript -->
+    <script src="javascript/bootstrap.js"></script>
+
+    <!-- Highstocks.js -->
+    <script src="javascript/highstock.js"></script>
+    <script src="javascript/pattern_fill.js"></script>
+
+    <!-- d3.js -->
+    <script src="javascript/d3.js"></script>
+
+    <!-- Own javascript -->
+    <script src="javascript/timeseries_graph.js"></script>  
+    <script src="javascript/session.js"></script>  
+    <script src="javascript/main.js"></script>  
+
+
+
+
+
+
+  </body>
+</html>

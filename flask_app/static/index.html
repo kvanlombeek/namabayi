@@ -1,0 +1,721 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <title>Namabayi</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/slider.css">
+
+
+    <meta name="theme-color" content="#ffffff">
+
+    <style>
+      .radio_label{
+        font-weight:normal;
+      }
+      #result_row_shown{
+        display:block;
+      }
+      #result_row_hidden{
+        display:none;
+      }
+      .kpi_title{
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: black;
+      }
+      .vcenter {
+          display: inline-block;
+          vertical-align: middle;
+          float: none;
+      }
+/*      .star_filled {
+          color: yellow;
+          -webkit-text-stroke-width: 0.5px;
+          -webkit-text-stroke-color: orange;
+      }*/
+      .stars{
+        padding:0px;
+      }
+      #info_icon_trending{
+        display:inline;
+        vertical-align: super;
+        font-size: 0.8em;
+
+      }
+      .container.hide{
+        display:none;
+      }
+/*      p {
+          display: none;
+          background-color: yellow;
+          padding: 20px;
+      }
+      #info_icon_trending:hover p,
+      #info_icon_trending:focus p{
+          display: block;
+      }*/
+      #suggestie_h3{
+        margin-top: 10px;
+      }
+
+      #spinning_wheel {
+          position: absolute;
+          z-index: 9999;
+          top:0;
+          left:0;
+          height:100%;
+          width:100%;
+          background-color:rgba(0,0,0,0.1);
+      }
+      #spinning_wheel .spinner {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%);
+      }
+
+
+    </style>
+
+
+    <!-- Vue.js -->
+    <script src="javascript/vue.js"></script>
+
+  </head>
+<!--   <i class="fa fa-search" aria-hidden="true"></i>
+  <i class="fa fa-search" aria-hidden="true"></i>
+  <i class="fa fa-lightbulb-o" aria-hidden="true"></i>
+  <i class="fa fa-list-ul" aria-hidden="true"></i> -->
+  <body id="app">
+
+    <nav class="navbar navbar-default">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#" v-on:click="activate_page('welcome')">NamaBayi.be</a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li><a v-on:click="activate_page('welcome')">Wat is NamaBayi</a></li>
+              <li><a v-on:click="activate_page('lookup')">Zoek</a></li>
+              <li><a v-on:click="activate_page('suggest')">Suggesties</a></li>
+              <li><a v-on:click="activate_page('list')">Liked names</a></li>
+              <li><a v-on:click="activate_page('about')">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </nav>
+    <div class="container" v-bind:class="{'hide':active_page['welcome']}">
+      <div id="header" class="row">
+        <div class="col-xs-12">
+          <h2>Wat is Namabayi</h2>
+          <p>Namabayi, Indonesisch voor babynaam, helpt je bij kiezen van een naam.</p>
+          <p>Je kan <b>statiestieken</b> opzoeken over een naam dat je in gedachten hebt. Of je kan de applicatie zelf <b>suggesties</b> laten doen. Hoe meer suggesties je liked, hoe intelligenter het suggestie mechanisme wordt.</p>
+          <p>De statistieken bij de namen zijn zelf berekend en als volgt bepaald:
+            <ul>
+              <li><b>Origineel</b>: Is de naam vaak gegeven?</li>
+              <li><b>Populair</b>: Is de naam vaak gegeven de laatste vijf jaar?</li>
+              <li><b>Klassiek</b>: Is de naam populair over alle leeftijden heen?</li>
+              <li><b>Vintage</b>: Was de naam populair bij de 65 plussers en erna niet meer?</li>
+              <li><b>Trending</b>: Is de populariteit van de naam de laatste jaren aan het stijgen?</li>
+            </ul>
+          </p>
+          <p>Veel succes bij de leuke zoektocht naar een naam!</p>
+        </div>
+      </div>
+    </div>
+    <div class="container" v-bind:class="{'hide':active_page['lookup']}">
+      <div id="header" class="row">
+        <div class="col-xs-12">
+          <h2>Zoek</h2><br>
+          <p>Gebruik de zoekfunctie om statistieken op te zoeken van een naam en deze te vergelijken met een andere naam.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12 col-sm-6">
+          <div class="form-group">
+            <label for="name_1">Welke naam had je in gedachten?</label>
+            <input class="form-control" id="name_1" placeholder="Naam" v-model="name_1">
+          </div>
+        </div>
+        <div class="col-xs-12 col-sm-6">
+          <div class="form-group">
+            <label for="name_2">Optionele referentie naam</label>
+            <input class="form-control" id="name_2" placeholder="Naam" v-model="name_2">
+          </div>
+        </div>
+        <!-- Radio sex buttons -->
+        <div class="col-xs-3">
+          <label>Geslacht</label><br>
+        </div>
+        <div class="col-xs-9">
+          <div class="radio-inline">
+            <input id="radio_girl" type="radio" name="sex" value="F" v-model="sex" checked>
+            <label class="radio_label" for="radio_girl">Meisje</label>
+          </div>
+          <div class="radio-inline">
+            <input id="radio_boy" type="radio" name="sex" value="M" v-model="sex">
+            <label class="radio_label" for="radio_boy">Jongen</label>
+          </div>
+          <br>
+        </div>
+        <!-- region sex buttons -->
+        <div class="col-xs-3">
+          <label>Regio</label><br>
+        </div>
+        <div class="col-xs-9">
+          <div class="radio-inline">
+            <input id="radio_belgie" type="radio" name="region" value="Belgie" v-model="region" checked>
+            <label class="radio_label" for="radio_belgie">België</label>
+          </div>
+          <div class="radio-inline">
+            <input id="radio_vlaanderen" type="radio" name="region" value="Vlaanderen" v-model="region">
+            <label class="radio_label" for="radio_vlaanderen">Vlaanderen</label>
+          </div>
+          <div class="radio-inline">
+            <input id="radio_brussel" type="radio" name="region" value="Brussel" v-model="region">
+            <label class="radio_label" for="radio_brussel">Brussel</label>
+          </div>
+          <div class="radio-inline">
+            <input id="radio_wallonie" type="radio" name="region" value="Wallonie" v-model="region">
+            <label class="radio_label" for="radio_wallonie">Wallonië</label>
+          </div>
+        </div>
+
+        <!-- Submit button -->
+        <div class="col-xs-12">
+            <button v-on:click="submit_names" class="btn btn-default">Zoek!</button>
+        </div>
+      </div>
+    </div>
+      <!-- Results section -->
+      <!-- *************** -->
+    <div class="container" id="lookup_stats_results" v-bind:class="{'hide':stats_div}">
+      <div class="row">
+        <div class="col-xs-12">
+          <h2>Je naam is:</h2><br>
+        </div>
+        <!-- Table header -->
+        <div class="col-xs-4">
+        </div>
+        <div class="col-xs-4">
+          <label>{{name_1}}</label>
+        </div>
+        <div class="col-xs-4">
+          <label>{{name_2}}</label>
+        </div>
+      </div>
+        <!-- Score origal -->
+        <!-- ************ -->
+      <div class="row text-center">  
+        <div class="col-xs-4">
+          <label>Origineel<label>
+        </div>
+        <!-- Name 1 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star star_filled':score_original['name_1'][1]['full'],
+                                          'fa-star-half-o':score_original['name_1'][1]['half_empty'],
+                                          'fa-star-o':score_original['name_1'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_1'][2]['full'],
+                                          'fa-star-half-o star_filled':score_original['name_1'][2]['half_empty'],
+                                          'fa-star-o':score_original['name_1'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_1'][3]['full'],
+                                          'fa-star-half-o':score_original['name_1'][3]['half_empty'],
+                                          'fa-star-o':score_original['name_1'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_1'][4]['full'],
+                                          'fa-star-half-o':score_original['name_1'][4]['half_empty'],
+                                          'fa-star-o':score_original['name_1'][4]['empty']}"></span>
+        </div>
+        <!-- Name 2 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_2'][1]['full'],
+                                          'fa-star-half-o':score_original['name_2'][1]['half_empty'],
+                                          'fa-star-o':score_original['name_2'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_2'][2]['full'],
+                                          'fa-star-half-o':score_original['name_2'][2]['half_empty'],
+                                          'fa-star-o':score_original['name_2'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_2'][3]['full'],
+                                          'fa-star-half-o':score_original['name_2'][3]['half_empty'],
+                                          'fa-star-o':score_original['name_2'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_original['name_2'][4]['full'],
+                                          'fa-star-half-o':score_original['name_2'][4]['half_empty'],
+                                          'fa-star-o':score_original['name_2'][4]['empty']}"></span>
+        </div>
+      </div>
+        <!-- Score popular -->
+        <!-- ************* -->
+      <div class="row text-center">  
+        <div class="col-xs-4">
+          <label>Populair<label>
+        </div>
+        <!-- Name 1 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star star_filled':score_popular['name_1'][1]['full'],
+                                          'fa-star-half-o':score_popular['name_1'][1]['half_empty'],
+                                          'fa-star-o':score_popular['name_1'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_1'][2]['full'],
+                                          'fa-star-half-o star_filled':score_popular['name_1'][2]['half_empty'],
+                                          'fa-star-o':score_popular['name_1'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_1'][3]['full'],
+                                          'fa-star-half-o':score_popular['name_1'][3]['half_empty'],
+                                          'fa-star-o':score_popular['name_1'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_1'][4]['full'],
+                                          'fa-star-half-o':score_popular['name_1'][4]['half_empty'],
+                                          'fa-star-o':score_popular['name_1'][4]['empty']}"></span>
+        </div>
+        <!-- Name 2 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_2'][1]['full'],
+                                          'fa-star-half-o':score_popular['name_2'][1]['half_empty'],
+                                          'fa-star-o':score_popular['name_2'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_2'][2]['full'],
+                                          'fa-star-half-o':score_popular['name_2'][2]['half_empty'],
+                                          'fa-star-o':score_popular['name_2'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_2'][3]['full'],
+                                          'fa-star-half-o':score_popular['name_2'][3]['half_empty'],
+                                          'fa-star-o':score_popular['name_2'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_popular['name_2'][4]['full'],
+                                          'fa-star-half-o':score_popular['name_2'][4]['half_empty'],
+                                          'fa-star-o':score_popular['name_2'][4]['empty']}"></span>
+        </div>
+      </div
+        <!-- Score classic -->
+        <!-- ************* -->
+      <div class="row text-center">
+        <div class="col-xs-4">
+          <label>Klassiek</label>
+        </div>
+        <!-- Name 1 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][1]['full'],
+                                          'fa-star-half-o':score_classic['name_1'][1]['half_empty'],
+                                          'fa-star-o':score_classic['name_1'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][2]['full'],
+                                          'fa-star-half-o':score_classic['name_1'][2]['half_empty'],
+                                          'fa-star-o':score_classic['name_1'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][3]['full'],
+                                          'fa-star-half-o':score_classic['name_1'][3]['half_empty'],
+                                          'fa-star-o':score_classic['name_1'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][4]['full'],
+                                          'fa-star-half-o':score_classic['name_1'][4]['half_empty'],
+                                          'fa-star-o':score_classic['name_1'][4]['empty']}"></span>
+       </div>
+        <!-- Name 2 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_2'][1]['full'],
+                                          'fa-star-half-o':score_classic['name_2'][1]['half_empty'],
+                                          'fa-star-o':score_classic['name_2'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_2'][2]['full'],
+                                          'fa-star-half-o':score_classic['name_2'][2]['half_empty'],
+                                          'fa-star-o':score_classic['name_2'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_2'][3]['full'],
+                                          'fa-star-half-o':score_classic['name_2'][3]['half_empty'],
+                                          'fa-star-o':score_classic['name_2'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_classic['name_2'][4]['full'],
+                                          'fa-star-half-o':score_classic['name_2'][4]['half_empty'],
+                                          'fa-star-o':score_classic['name_2'][4]['empty']}"></span>
+       </div>
+      </div>
+        <!-- Score vintage -->
+        <!-- ************* -->
+      <div class="row text-center">
+        <div class="col-xs-4">
+          <label>Vintage</label>
+        </div>
+        <!-- Name 1 -->
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][1]['full'],
+                                          'fa-star-half-o':score_vintage['name_1'][1]['half_empty'],
+                                          'fa-star-o':score_vintage['name_1'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][2]['full'],
+                                          'fa-star-half-o':score_vintage['name_1'][2]['half_empty'],
+                                          'fa-star-o':score_vintage['name_1'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][3]['full'],
+                                          'fa-star-half-o':score_vintage['name_1'][3]['half_empty'],
+                                          'fa-star-o':score_vintage['name_1'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][4]['full'],
+                                          'fa-star-half-o':score_vintage['name_1'][4]['half_empty'],
+                                          'fa-star-o':score_vintage['name_1'][4]['empty']}"></span>
+      </div>
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_2'][1]['full'],
+                                          'fa-star-half-o':score_vintage['name_2'][1]['half_empty'],
+                                          'fa-star-o':score_vintage['name_2'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_2'][2]['full'],
+                                          'fa-star-half-o':score_vintage['name_2'][2]['half_empty'],
+                                          'fa-star-o':score_vintage['name_2'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_2'][3]['full'],
+                                          'fa-star-half-o':score_vintage['name_2'][3]['half_empty'],
+                                          'fa-star-o':score_vintage['name_2'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_vintage['name_2'][4]['full'],
+                                          'fa-star-half-o':score_vintage['name_2'][4]['half_empty'],
+                                          'fa-star-o':score_vintage['name_2'][4]['empty']}"></span>
+       </div>
+      </div>
+        <!-- Score trending -->
+      <div class="row text-center">  
+        <div class="col-xs-4">
+          <label>Trending</label>
+        </div>
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][1]['full'],
+                                          'fa-star-half-o':score_trend['name_1'][1]['half_empty'],
+                                          'fa-star-o':score_trend['name_1'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][2]['full'],
+                                          'fa-star-half-o':score_trend['name_1'][2]['half_empty'],
+                                          'fa-star-o':score_trend['name_1'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][3]['full'],
+                                          'fa-star-half-o':score_trend['name_1'][3]['half_empty'],
+                                          'fa-star-o':score_trend['name_1'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][4]['full'],
+                                          'fa-star-half-o':score_trend['name_1'][4]['half_empty'],
+                                          'fa-star-o':score_trend['name_1'][4]['empty']}"></span>
+        </div>
+        <div class="col-xs-4 stars">
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_2'][1]['full'],
+                                          'fa-star-half-o':score_trend['name_2'][1]['half_empty'],
+                                          'fa-star-o':score_trend['name_2'][1]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_2'][2]['full'],
+                                          'fa-star-half-o':score_trend['name_2'][2]['half_empty'],
+                                          'fa-star-o':score_trend['name_2'][2]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_2'][3]['full'],
+                                          'fa-star-half-o':score_trend['name_2'][3]['half_empty'],
+                                          'fa-star-o':score_trend['name_2'][3]['empty']}"></span>
+          <span class="fa" v-bind:class="{'fa-star':score_trend['name_2'][4]['full'],
+                                          'fa-star-half-o':score_trend['name_2'][4]['half_empty'],
+                                          'fa-star-o':score_trend['name_2'][4]['empty']}"></span>
+        </div>
+      </div>
+      <div class="row text-center">  
+        <div class="col-xs-12">
+          <h2>Trend</h2>
+        </div>
+        <div class="col-xs-12" id="timeseries_graph"></div>
+      </div>
+    </div>
+
+    <!-- **************** -->
+    <!-- **************** -->
+    <!-- **************** -->
+    <!-- PAGE SUGGESTIONS -->
+    <!-- **************** -->
+    <!-- **************** -->
+    <!-- **************** -->
+    <!-- **************** -->
+
+    <div class="container" v-bind:class="{'hide':active_page['suggest']}">
+      <div id="spinning_wheel" v-bind:class="{'hide':spinning_wheel_suggestions}">
+        <div class="spinner"><i class="fa fa-refresh fa-spin fa-3x fa-fw"></i></div>
+      </div>
+        <div class="row">
+          <div class="col-xs-12">
+            <h2>Suggesties</h2>
+            <p>Hier geven we suggesties van voornamen. Deze suggesties zijn in het begin random. Vanaf je ongeveer 10 namen geliked hebt, worden de suggesties gemaakt met een aanbevelingsalgoritme.</p>
+          </div>
+
+        </div>
+<!--         <div class="row">
+          <div class="col-xs-4 text-center"></div>
+          <div class="col-xs-4 text-center"><label>Minumum</label></div>
+          <div class="col-xs-4 text-center"><label>Maximum</label></div>
+        </div>      
+        <div class="row">
+          <div class="col-xs-4 text-center"><label>Origineel: </label></div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':suggest['original']['min'][1]['full'],
+                                'fa-star-half-o':suggest['original']['min'][1]['half_empty'],
+                                'fa-star-o':suggest['original']['min'][1]['empty']}" 
+                                v-on:click="set_stars" id="suggest_original_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['min'][2]['full'],
+                                'fa-star-half-o star_filled':suggest['original']['min'][2]['half_empty'],
+                                'fa-star-o':suggest['original']['min'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_min_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['min'][3]['full'],
+                                'fa-star-half-o':suggest['original']['min'][3]['half_empty'],
+                                'fa-star-o':suggest['original']['min'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_min_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['min'][4]['full'],
+                                'fa-star-half-o':suggest['original']['min'][4]['half_empty'],
+                                'fa-star-o':suggest['original']['min'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_min_4" ></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['max'][1]['full'],
+                                'fa-star-half-o':suggest['original']['max'][1]['half_empty'],
+                                'fa-star-o':suggest['original']['max'][1]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_max_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['max'][2]['full'],
+                                'fa-star-half-o':suggest['original']['max'][2]['half_empty'],
+                                'fa-star-o':suggest['original']['max'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_max_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['max'][3]['full'],
+                                'fa-star-half-o':suggest['original']['max'][3]['half_empty'],
+                                'fa-star-o':suggest['original']['max'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_max_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['original']['max'][4]['full'],
+                                'fa-star-half-o':suggest['original']['max'][4]['half_empty'],
+                                'fa-star-o':suggest['original']['max'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_original_max_4" ></span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"><label>Populair:</label></div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':suggest['populair']['min'][1]['full'],
+                                'fa-star-half-o':suggest['populair']['min'][1]['half_empty'],
+                                'fa-star-o':suggest['populair']['min'][1]['empty']}" 
+                                v-on:click="set_stars" id="suggest_populair_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['min'][2]['full'],
+                                'fa-star-half-o star_filled':suggest['populair']['min'][2]['half_empty'],
+                                'fa-star-o':suggest['populair']['min'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_min_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['min'][3]['full'],
+                                'fa-star-half-o':suggest['populair']['min'][3]['half_empty'],
+                                'fa-star-o':suggest['populair']['min'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_min_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['min'][4]['full'],
+                                'fa-star-half-o':suggest['populair']['min'][4]['half_empty'],
+                                'fa-star-o':suggest['populair']['min'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_min_4" ></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['max'][1]['full'],
+                                'fa-star-half-o':suggest['populair']['max'][1]['half_empty'],
+                                'fa-star-o':suggest['populair']['max'][1]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_max_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['max'][2]['full'],
+                                'fa-star-half-o':suggest['populair']['max'][2]['half_empty'],
+                                'fa-star-o':suggest['populair']['max'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_max_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['max'][3]['full'],
+                                'fa-star-half-o':suggest['populair']['max'][3]['half_empty'],
+                                'fa-star-o':suggest['populair']['max'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_max_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['populair']['max'][4]['full'],
+                                'fa-star-half-o':suggest['populair']['max'][4]['half_empty'],
+                                'fa-star-o':suggest['populair']['max'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_populair_max_4" ></span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"><label>Klassiek:</label></div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':suggest['classic']['min'][1]['full'],
+                                'fa-star-half-o':suggest['classic']['min'][1]['half_empty'],
+                                'fa-star-o':suggest['classic']['min'][1]['empty']}" 
+                                v-on:click="set_stars" id="suggest_classic_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['min'][2]['full'],
+                                'fa-star-half-o star_filled':suggest['classic']['min'][2]['half_empty'],
+                                'fa-star-o':suggest['classic']['min'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_min_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['min'][3]['full'],
+                                'fa-star-half-o':suggest['classic']['min'][3]['half_empty'],
+                                'fa-star-o':suggest['classic']['min'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_min_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['min'][4]['full'],
+                                'fa-star-half-o':suggest['classic']['min'][4]['half_empty'],
+                                'fa-star-o':suggest['classic']['min'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_min_4" ></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['max'][1]['full'],
+                                'fa-star-half-o':suggest['classic']['max'][1]['half_empty'],
+                                'fa-star-o':suggest['classic']['max'][1]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_max_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['max'][2]['full'],
+                                'fa-star-half-o':suggest['classic']['max'][2]['half_empty'],
+                                'fa-star-o':suggest['classic']['max'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_max_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['max'][3]['full'],
+                                'fa-star-half-o':suggest['classic']['max'][3]['half_empty'],
+                                'fa-star-o':suggest['classic']['max'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_max_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['classic']['max'][4]['full'],
+                                'fa-star-half-o':suggest['classic']['max'][4]['half_empty'],
+                                'fa-star-o':suggest['classic']['max'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_classic_max_4" ></span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"><label>Vintage:</label></div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':suggest['vintage']['min'][1]['full'],
+                                'fa-star-half-o':suggest['vintage']['min'][1]['half_empty'],
+                                'fa-star-o':suggest['vintage']['min'][1]['empty']}" 
+                                v-on:click="set_stars" id="suggest_vintage_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['min'][2]['full'],
+                                'fa-star-half-o star_filled':suggest['vintage']['min'][2]['half_empty'],
+                                'fa-star-o':suggest['vintage']['min'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_min_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['min'][3]['full'],
+                                'fa-star-half-o':suggest['vintage']['min'][3]['half_empty'],
+                                'fa-star-o':suggest['vintage']['min'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_min_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['min'][4]['full'],
+                                'fa-star-half-o':suggest['vintage']['min'][4]['half_empty'],
+                                'fa-star-o':suggest['vintage']['min'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_min_4" ></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['max'][1]['full'],
+                                'fa-star-half-o':suggest['vintage']['max'][1]['half_empty'],
+                                'fa-star-o':suggest['vintage']['max'][1]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_max_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['max'][2]['full'],
+                                'fa-star-half-o':suggest['vintage']['max'][2]['half_empty'],
+                                'fa-star-o':suggest['vintage']['max'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_max_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['max'][3]['full'],
+                                'fa-star-half-o':suggest['vintage']['max'][3]['half_empty'],
+                                'fa-star-o':suggest['vintage']['max'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_max_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['vintage']['max'][4]['full'],
+                                'fa-star-half-o':suggest['vintage']['max'][4]['half_empty'],
+                                'fa-star-o':suggest['vintage']['max'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_vintage_max_4" ></span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-4 text-center"><label>Trending:</label></div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star star_filled':suggest['trending']['min'][1]['full'],
+                                'fa-star-half-o':suggest['trending']['min'][1]['half_empty'],
+                                'fa-star-o':suggest['trending']['min'][1]['empty']}" 
+                                v-on:click="set_stars" id="suggest_trending_min_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['min'][2]['full'],
+                                'fa-star-half-o star_filled':suggest['trending']['min'][2]['half_empty'],
+                                'fa-star-o':suggest['trending']['min'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_min_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['min'][3]['full'],
+                                'fa-star-half-o':suggest['trending']['min'][3]['half_empty'],
+                                'fa-star-o':suggest['trending']['min'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_min_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['min'][4]['full'],
+                                'fa-star-half-o':suggest['trending']['min'][4]['half_empty'],
+                                'fa-star-o':suggest['trending']['min'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_min_4" ></span>
+          </div>
+          <div class="col-xs-4 text-center stars">
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['max'][1]['full'],
+                                'fa-star-half-o':suggest['trending']['max'][1]['half_empty'],
+                                'fa-star-o':suggest['trending']['max'][1]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_max_1" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['max'][2]['full'],
+                                'fa-star-half-o':suggest['trending']['max'][2]['half_empty'],
+                                'fa-star-o':suggest['trending']['max'][2]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_max_2" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['max'][3]['full'],
+                                'fa-star-half-o':suggest['trending']['max'][3]['half_empty'],
+                                'fa-star-o':suggest['trending']['max'][3]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_max_3" ></span>
+            <span class="fa" v-bind:class="{'fa-star':suggest['trending']['max'][4]['full'],
+                                'fa-star-half-o':suggest['trending']['max'][4]['half_empty'],
+                                'fa-star-o':suggest['trending']['max'][4]['empty']}"
+                                v-on:click="set_stars" id="suggest_trending_max_4" ></span>
+          </div>
+        </div>
+  -->       
+        <br>
+        <div class="row">
+          <div class="col-xs-4 text-center">
+            <label>Geslacht:</label><br>
+          </div>
+          <div class="col-xs-8">
+            <div class="radio-inline">
+              <input id="suggest_radio_girl" type="radio" name="suggest_sex" value="F" v-model="suggestion_request_sex" checked>
+              <label class="radio_label" for="radio_girl">Meisje</label>
+            </div>
+            <br>
+            <div class="radio-inline">
+              <input id="suggest_radio_boy" type="radio" name="suggest_sex" value="M" v-model="suggestion_request_sex">
+              <label class="radio_label" for="radio_boy">Jongen</label>
+            </div>
+            <br>
+          </div>
+        </div>
+            <br>
+            <br>
+<!--         <div class="row">
+          <div class="col-xs-4 text-center"><label># Letters:</label></div>
+        </div> -->
+        <div class="row" >
+          <div class="col-xs-3 text-center">
+            <i class="fa fa-thumbs-down fa-3x" v-on:click="get_suggestion('no_like')" aria-hidden="true"></i>
+          </div>
+          <div class="col-xs-6 text-center" >
+            <h3 id="suggestie_h3">{{returned_suggestion['name']}}</h3>
+          </div>
+          <div class="col-xs-3 text-center">
+            <i class="fa fa-thumbs-up fa-3x" v-on:click="get_suggestion('like')" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+
+    <div class="container" v-bind:class="{'hide':active_page['list']}">
+      <h2>Liked names</h2>
+      <p>Dit is een lijst met alle namen dewelke je reeds hebt geliked. We gebruiken deze lijst om beter suggesties te maken, dus zorg ervoor dat er steeds minstens 10 namen instaan. Hoe meer namen in de lijst, hoe beter de suggesties!</p>
+      <ul>
+        <li v-for="item in liked_names">
+          {{ item.name }}
+          <i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i>
+        </li>
+        <li>
+          <input placeholder="Add a name" v-model="name_to_add" >
+          <span>
+            <div class="radio-inline">
+              <input id="add_radio_girl" type="radio" name="add_name_sex" value="F" v-model="name_to_add_sex" checked>
+              <label class="radio_label" for="radio_girl">F</label>
+            </div>
+            <div class="radio-inline">
+              <input id="add_radio_boy" type="radio" name="add_name_sex" value="M" v-model="name_to_add_sex">
+              <label class="radio_label" for="radio_boy">M</label>
+            </div>
+          </span>
+          <button v-on:click="add_name" class="btn btn-default btn-sm">Add</button>
+        </li>
+      </ul>
+    </div>
+    <div class="container" v-bind:class="{'hide':active_page['about']}">
+      <div id="header" class="row">
+        <div class="col-xs-12">
+          <h2>About</h2>
+          <p>Altough there are many services available for picking a baby name, on a long holiday I decided to build our own. I had in mind that it should be possible to calculate features for each name (time series features, text analysis features and spatial features) and build a recommendation engine on top of them.</p>
+          <p>This project demonstrates what I like best, taking an analysis (defining the features and building the model) a step further and build an interactive visualisation around it. By doing so, you can test it out with many examples, using it where ever in the world and send it around to other people.</p>
+          <p>For more information or suggestions, feel free to contact me on <a href='kasper.vanlombeek@gmail.com'>kasper.vanlombeek@gmail.com</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery.js -->
+    <script   src="javascript/jquery.js"></script>
+    
+    <!-- bootstrap javascript -->
+    <script src="javascript/bootstrap.js"></script>
+
+    <!-- Highstocks.js -->
+    <script src="javascript/highstock.js"></script>
+
+    <!-- Own javascript -->
+    <script src="javascript/timeseries_graph.js"></script>  
+    <script src="javascript/session.js"></script>  
+    <script src="javascript/main.js"></script>  
+
+
+
+
+
+
+  </body>
+</html>
