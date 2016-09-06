@@ -221,8 +221,8 @@ def get_suggestion():
 						FROM feedback
 						WHERE user_ID = ?)
 					ORDER BY RANDOM() LIMIT 1'''
-		params = [requested_sex,int(scores['original']['min']),int(scores['original']['max']),
-						int(scores['populair']['min']),int(scores['populair']['max']),
+		params = [requested_sex,scores['original']['min'],scores['original']['max'],
+						1,scores['populair']['max'],
 						scores['classic']['min'],scores['classic']['max'],
 						scores['vintage']['min'],scores['vintage']['max'],
 						scores['trending']['min'],scores['trending']['max'], user_ID]
