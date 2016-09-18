@@ -309,8 +309,8 @@ vm = new Vue({
       )
     },
     add_name:function(event){
-      console.log(this.name_to_add)
       pass_this = this
+      this.global_spinning_wheel=false
       $.get(
           url='/add_name',
           data={
@@ -320,9 +320,9 @@ vm = new Vue({
             'sex':pass_this.name_to_add_sex
           },
           callback=function(return_data){
-            console.log(return_data)
             pass_this.name_to_add = ''
             pass_this.liked_names = return_data['liked_names']
+            pass_this.global_spinning_wheel=true
       })
       
     },
@@ -358,11 +358,8 @@ vm = new Vue({
             name_numbers = ['name_1','name_2']
       			for(i=0; i<score_names.length;i++ ){
       				score_name = score_names[i]
-              console.log(score_name)
-              console.log(return_data[score_name])
       				for(j=0; j<name_numbers.length; j++){
                 name_number = name_numbers[j]
-                console.log(name_number)
                 for(k=0; k<4; k++ ){
 		      				pass_this[score_name][name_number][k+1]['full'] = false
 		      				pass_this[score_name][name_number][k+1]['half_empty'] = false
@@ -377,8 +374,6 @@ vm = new Vue({
 		      			}
 		      		}
       			}
-            console.log(return_data)
-            console.log(return_data['meanings']['name_1'])
             pass_this.name_1_meaning = return_data['meanings']['name_1']
             pass_this.name_2_meaning = return_data['meanings']['name_2']
             pass_this.global_spinning_wheel=true

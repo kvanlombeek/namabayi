@@ -63,12 +63,9 @@ function get_stringer_suggestion(how_many, initialise){
 				selection.enter()
 							.append("span")
 							.text(function(d){
-								console.log(d['value']['name'])
 								return d['value']['name']
 							})
 							.style("font-weight", function(d){
-								console.log(d['key'] == active_pair_index)
-								console.log()
 								if(d['key']==active_pair_index){ return 'bold' }else{ return 'normal'}
 							})
 							.style("font-size", function(d){
@@ -80,7 +77,6 @@ function get_stringer_suggestion(how_many, initialise){
 
 	          	}else{
 	          		max_key = d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1]
-	          		console.log('Max key = ' + max_key)
 	          		for(var i=0;i<return_data['names'].length;i++){
 	          			sug_names_in_frontend[max_key+i] ={}
 	          			sug_names_in_frontend[max_key+i]['name'] = return_data['names'][i]	
@@ -108,7 +104,6 @@ function return_vote(name, vote){
 }
 
 function actions_after_vote(vote){
-	console.log(vote)
 	
 	// Actions to take:
 	// - Return the vote to the backend
@@ -153,7 +148,6 @@ function actions_after_vote(vote){
 }
 
 function backend_communication_loop(){
-	console.log('begin communcation loop')
 	
 	// Return votes that were not yet returned, keep track of how many, this number has to be requested again
 	var temp_how_many_returned = 0
@@ -176,7 +170,6 @@ function backend_communication_loop(){
 	}
 
 	// Request new strings
-	console.log('How many new strings requested: ' + temp_how_many_returned)
 	if(temp_how_many_returned > 0){
 		query_two_strings(temp_how_many_returned)
 		for(i=0; i<d3.entries(strings_returned_from_backend).length; i++){
