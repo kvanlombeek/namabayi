@@ -15,6 +15,54 @@
     <meta name="theme-color" content="#ffffff">
 
     <style>
+/*      body{
+        background-color:#FAFAFA;
+      }*/
+      .border_top{
+        margin-top: 20px;
+        border-style: solid;
+        border-bottom-width:0;
+        border-left-width:0;
+        border-right-width:0;
+      }
+      .k_btn {
+          display: inline-block;
+          padding: 6px 12px;
+          margin-bottom: 0;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.42857143;
+          text-align: center;
+          white-space: nowrap;
+          vertical-align: middle;
+          -ms-touch-action: manipulation;
+          touch-action: manipulation;
+          cursor: pointer;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+          background-image: none;
+          border: 1px solid transparent;
+          border-radius: 4px;
+      }
+      .k_btn-default {
+          color: #333;
+          background-color: #fff;
+          border-color: #ddd;
+      }
+      .k_btn-primary {
+          color: black;
+          /*background-color: #337ab7;*/
+          background-color: #e6e6e6;
+          border-color: #ccc;
+      }
+
+      .k_btn-warning {
+          color: #fff;
+          background-color: #f0ad4e;
+          border-color: #eea236;
+      }
       .radio_label{
         font-weight:normal;
       }
@@ -34,19 +82,24 @@
           vertical-align: middle;
           float: none;
       }
-/*      .star_filled {
-          color: yellow;
-          -webkit-text-stroke-width: 0.5px;
-          -webkit-text-stroke-color: orange;
-      }*/
-      .stars{
-        padding:0px;
+      .fa-star {
+          color: gold;
+/*          -webkit-text-stroke-width: 1px;
+          -webkit-text-stroke-color: black;*/
       }
+      .fa-star-half-o {
+          color: gold;
+/*          -webkit-text-stroke-width: 1px;
+          -webkit-text-stroke-color: black;*/
+      }
+
+/*      .stars{
+        padding:0px;
+      }*/
       #info_icon_trending{
         display:inline;
         vertical-align: super;
         font-size: 0.8em;
-
       }
       .container.hide{
         display:none;
@@ -119,7 +172,7 @@
     <div class="container" v-bind:class="{'hide':active_page['welcome']}">
       <div id="header" class="row">
         <div class="col-xs-12">
-          <h2>Wat is Namabayi</h2>
+          <h3>Wat is Namabayi</h3>
           <p>Namabayi, Indonesisch voor babynaam, helpt je bij kiezen van een naam.</p>
           <p>Je kan <b>statiestieken</b> opzoeken over een naam dat je in gedachten hebt. Of je kan de applicatie zelf <b>suggesties</b> laten doen. Hoe meer suggesties je liked, hoe intelligenter het suggestie mechanisme wordt.</p>
           <p>De statistieken bij de namen zijn zelf berekend en als volgt bepaald:
@@ -137,40 +190,50 @@
     </div>
     <div class="container" v-bind:class="{'hide':active_page['lookup']}">
       <div id="header" class="row">
-        <div class="col-xs-12">
-          <h2>Zoek</h2><br>
-          <p>Gebruik de zoekfunctie om statistieken op te zoeken van een naam en deze te vergelijken met een andere naam.</p>
+          <div class="col-xs-12">
+            <h3>Zoek</h3>
+            <p>Zoek statistieken van een naam en vergelijk deze met een andere naam.</p><br>
+          </div>
+          <div class="col-xs-12"><label for="name_1">Welke naam had je in gedachten?</label></div>
+          <div class="col-xs-6 col-sm-6">
+            <div class="form-group">  
+              <input class="form-control" id="name_1" placeholder="Naam" v-model="name_1">
+            </div>
+          </div>
+          <div class="col-xs-6 col-sm-6">
+            <span v-on:click="lookup_prim_change_sex_to('F')" 
+            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['prim_name']['male_selected'],
+                        'k_btn k_btn-primary':lookup_sex_selection['prim_name']['female_selected']}">
+                        <i class="fa fa-venus" aria-hidden="true"></i>
+            </span>
+            <span v-on:click="lookup_prim_change_sex_to('M')"
+            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['prim_name']['female_selected'],
+                        'k_btn k_btn-primary':lookup_sex_selection['prim_name']['male_selected']}">
+                        <i class="fa fa-mars" aria-hidden="true"></i></span>
+          </div>
+          <div class="col-xs-12"><label for="name_1">Vergelijk met</label></div>
+          <div class="col-xs-6 col-sm-6">
+            <div class="form-group">
+              <input class="form-control" id="name_2" placeholder="Naam" v-model="name_2">
+            </div>
+          </div>
+          <div class="col-xs-6 col-sm-6">
+            <span v-on:click="lookup_ref_change_sex_to('F')" 
+            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['ref_name']['male_selected'],
+                         'k_btn k_btn-primary':lookup_sex_selection['ref_name']['female_selected']}">
+                        <i class="fa fa-venus" aria-hidden="true"></i></span>
+            <span v-on:click="lookup_ref_change_sex_to('M')" 
+            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['ref_name']['female_selected'],
+                         'k_btn k_btn-primary':lookup_sex_selection['ref_name']['male_selected']}">
+                        <i class="fa fa-mars" aria-hidden="true"></i></span>
+          </div>
+          <!-- Submit button -->
+          <div class="col-xs-12">
+            <button v-on:click="submit_names" class="btn btn-default"><i class="fa fa-search" aria-hidden="true"></i> Zoek!</button><br>
+          </div>
         </div>
       </div>
-
-      <div class="row">
-        <div class="col-xs-12 col-sm-6">
-          <div class="form-group">
-            <label for="name_1">Welke naam had je in gedachten?</label>
-            <input class="form-control" id="name_1" placeholder="Naam" v-model="name_1">
-          </div>
-        </div>
-        <div class="col-xs-12 col-sm-6">
-          <div class="form-group">
-            <label for="name_2">Optionele referentie naam</label>
-            <input class="form-control" id="name_2" placeholder="Naam" v-model="name_2">
-          </div>
-        </div>
-        <!-- Radio sex buttons -->
-        <div class="col-xs-3">
-          <label>Geslacht</label><br>
-        </div>
-        <div class="col-xs-9">
-          <div class="radio-inline">
-            <input id="radio_girl" type="radio" name="sex" value="F" v-model="sex" checked>
-            <label class="radio_label" for="radio_girl">Meisje</label>
-          </div>
-          <div class="radio-inline">
-            <input id="radio_boy" type="radio" name="sex" value="M" v-model="sex">
-            <label class="radio_label" for="radio_boy">Jongen</label>
-          </div>
-          <br>
-        </div>
+      <div class="row" style="display:none">
         <!-- region sex buttons -->
         <div class="col-xs-3">
           <label>Regio</label><br>
@@ -193,38 +256,37 @@
             <label class="radio_label" for="radio_wallonie">Wallonië</label>
           </div>
         </div>
-
-        <!-- Submit button -->
-        <div class="col-xs-12">
-            <button v-on:click="submit_names" class="btn btn-default">Zoek!</button>
-        </div>
-      </div>
     </div>
       <!-- Results section -->
       <!-- *************** -->
-    <div class="container" id="lookup_stats_results" v-bind:class="{'hide':stats_div}">
+    <div class="container" v-bind:class="{'hide':stats_div}">
       <div class="row">
         <div class="col-xs-12">
-          <h2>Je naam is:</h2><br>
+          <div class="border_top"></div>
         </div>
+      </div>
+    </div>
+    <div class="container" id="lookup_stats_results" v-bind:class="{'hide':stats_div}">
+      <div class="row">
+        <div class="col-xs-12"><h3>Je naam is</h3></div>
         <!-- Table header -->
         <div class="col-xs-4">
         </div>
-        <div class="col-xs-4">
+        <div class="col-xs-4 text-center">
           <label>{{name_1}}</label>
         </div>
-        <div class="col-xs-4">
+        <div class="col-xs-4 text-center">
           <label>{{name_2}}</label>
         </div>
       </div>
         <!-- Score origal -->
         <!-- ************ -->
-      <div class="row text-center">  
+      <div class="row">  
         <div class="col-xs-4">
           <label>Origineel<label>
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars  text-center">
           <span class="fa" v-bind:class="{'fa-star star_filled':score_original['name_1'][1]['full'],
                                           'fa-star-half-o':score_original['name_1'][1]['half_empty'],
                                           'fa-star-o':score_original['name_1'][1]['empty']}"></span>
@@ -239,7 +301,7 @@
                                           'fa-star-o':score_original['name_1'][4]['empty']}"></span>
         </div>
         <!-- Name 2 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars  text-center">
           <span class="fa" v-bind:class="{'fa-star':score_original['name_2'][1]['full'],
                                           'fa-star-half-o':score_original['name_2'][1]['half_empty'],
                                           'fa-star-o':score_original['name_2'][1]['empty']}"></span>
@@ -256,12 +318,12 @@
       </div>
         <!-- Score popular -->
         <!-- ************* -->
-      <div class="row text-center">  
+      <div class="row">  
         <div class="col-xs-4">
           <label>Populair<label>
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star star_filled':score_popular['name_1'][1]['full'],
                                           'fa-star-half-o':score_popular['name_1'][1]['half_empty'],
                                           'fa-star-o':score_popular['name_1'][1]['empty']}"></span>
@@ -276,7 +338,7 @@
                                           'fa-star-o':score_popular['name_1'][4]['empty']}"></span>
         </div>
         <!-- Name 2 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_popular['name_2'][1]['full'],
                                           'fa-star-half-o':score_popular['name_2'][1]['half_empty'],
                                           'fa-star-o':score_popular['name_2'][1]['empty']}"></span>
@@ -293,12 +355,12 @@
       </div
         <!-- Score classic -->
         <!-- ************* -->
-      <div class="row text-center">
+      <div class="row">
         <div class="col-xs-4">
           <label>Klassiek</label>
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][1]['full'],
                                           'fa-star-half-o':score_classic['name_1'][1]['half_empty'],
                                           'fa-star-o':score_classic['name_1'][1]['empty']}"></span>
@@ -313,7 +375,7 @@
                                           'fa-star-o':score_classic['name_1'][4]['empty']}"></span>
        </div>
         <!-- Name 2 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_classic['name_2'][1]['full'],
                                           'fa-star-half-o':score_classic['name_2'][1]['half_empty'],
                                           'fa-star-o':score_classic['name_2'][1]['empty']}"></span>
@@ -330,12 +392,12 @@
       </div>
         <!-- Score vintage -->
         <!-- ************* -->
-      <div class="row text-center">
+      <div class="row">
         <div class="col-xs-4">
           <label>Vintage</label>
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][1]['full'],
                                           'fa-star-half-o':score_vintage['name_1'][1]['half_empty'],
                                           'fa-star-o':score_vintage['name_1'][1]['empty']}"></span>
@@ -349,7 +411,7 @@
                                           'fa-star-half-o':score_vintage['name_1'][4]['half_empty'],
                                           'fa-star-o':score_vintage['name_1'][4]['empty']}"></span>
       </div>
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars  text-center">
           <span class="fa" v-bind:class="{'fa-star':score_vintage['name_2'][1]['full'],
                                           'fa-star-half-o':score_vintage['name_2'][1]['half_empty'],
                                           'fa-star-o':score_vintage['name_2'][1]['empty']}"></span>
@@ -365,11 +427,11 @@
        </div>
       </div>
         <!-- Score trending -->
-      <div class="row text-center">  
+      <div class="row">  
         <div class="col-xs-4">
           <label>Trending</label>
         </div>
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][1]['full'],
                                           'fa-star-half-o':score_trend['name_1'][1]['half_empty'],
                                           'fa-star-o':score_trend['name_1'][1]['empty']}"></span>
@@ -383,7 +445,7 @@
                                           'fa-star-half-o':score_trend['name_1'][4]['half_empty'],
                                           'fa-star-o':score_trend['name_1'][4]['empty']}"></span>
         </div>
-        <div class="col-xs-4 stars">
+        <div class="col-xs-4 stars text-center">
           <span class="fa" v-bind:class="{'fa-star':score_trend['name_2'][1]['full'],
                                           'fa-star-half-o':score_trend['name_2'][1]['half_empty'],
                                           'fa-star-o':score_trend['name_2'][1]['empty']}"></span>
@@ -398,11 +460,35 @@
                                           'fa-star-o':score_trend['name_2'][4]['empty']}"></span>
         </div>
       </div>
-      <div class="row text-center">  
+<!--       <div class="row">  
+        <div class="col-xs-3">
+          <label>Gelijkaardig</label>
+        </div>
+        <div class="col-xs-5 text-center">
+          <i>Carolina, Karolien</i>
+        </div>
+        <div class="col-xs-5 text-center">
+        </div>
+      </div> -->
+    </div>
+    <div class="container" v-bind:class="{'hide':stats_div}">
+      <div class="row">
         <div class="col-xs-12">
-          <h2>Trend</h2>
+          <div class="border_top"></div>
+        </div>
+      </div>
+    </div>
+    <div class="container" v-bind:class="{'hide':stats_div}">
+      <div class="row">  
+        <div class="col-xs-12">
+          <h3>Trend</h3>
         </div>
         <div class="col-xs-12" id="timeseries_graph"></div>
+      </div>
+      <div class="row"> 
+        <div class="col-xs-12">
+          <p style="height:50px;"></p>
+        </div>
       </div>
     </div>
 
@@ -421,7 +507,7 @@
       </div>
         <div class="row">
           <div class="col-xs-12">
-            <h2>Suggesties</h2>
+            <h3>Suggesties</h3>
             <p>Hier geven we suggesties van voornamen. Deze suggesties zijn in het begin random. Vanaf je ongeveer 10 namen geliked hebt, worden de suggesties gemaakt met een aanbevelingsalgoritme.</p>
           </div>
 
@@ -664,7 +750,7 @@
       </div>
 
     <div class="container" v-bind:class="{'hide':active_page['list']}">
-      <h2>Liked names</h2>
+      <h3>Liked names</h3>
       <p>Dit is een lijst met alle namen dewelke je reeds hebt geliked. We gebruiken deze lijst om beter suggesties te maken, dus zorg ervoor dat er steeds minstens 10 namen instaan. Hoe meer namen in de lijst, hoe beter de suggesties!</p>
       <ul>
         <li v-for="item in liked_names">
@@ -690,7 +776,7 @@
     <div class="container" v-bind:class="{'hide':active_page['about']}">
       <div id="header" class="row">
         <div class="col-xs-12">
-          <h2>About</h2>
+          <h3>About</h3>
           <p>Altough there are many services available for picking a baby name, on a long holiday I decided to build our own. I had in mind that it should be possible to calculate features for each name (time series features, text analysis features and spatial features) and build a recommendation engine on top of them.</p>
           <p>This project demonstrates what I like best, taking an analysis (defining the features and building the model) a step further and build an interactive visualisation around it. By doing so, you can test it out with many examples, using it where ever in the world and send it around to other people.</p>
           <p>For more information or suggestions, feel free to contact me on <a href='kasper.vanlombeek@gmail.com'>kasper.vanlombeek@gmail.com</a></p>

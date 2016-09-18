@@ -306,7 +306,8 @@ def get_stats():
 	# Request name info
 	name_1 = request.args.get('name_1').strip().title()
 	name_2 = request.args.get('name_2').strip().title()
-	sex = request.args.get('sex')
+	sex_name_1 = request.args.get('sex_name_1')
+	sex_name_2 = request.args.get('sex_name_2')
 	region = request.args.get('region')
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
@@ -318,7 +319,8 @@ def get_stats():
 					'name_1': name_1,
 					'name_2': name_2,
 					'region':region,
-					'sex':sex}
+					'sex_name_1':sex_name_1,
+					'sex_name_2':sex_name_2}
 	write_dict_to_sql_usage(lookup_info, 'name_lookups')
 
 	# Connection to database
@@ -331,7 +333,7 @@ def get_stats():
 				AND Sex = ?
 				AND Region = ?
 				LIMIT 1'''
-	params = [name_1, sex, region]
+	params = [name_1, sex_name_1, region]
 	try: 
 		name_1_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[0,:]
 		name_1_ts = name_1_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
@@ -346,7 +348,7 @@ def get_stats():
 				AND Sex = ?
 				AND Region = ?
 				LIMIT 1'''
-	params = [name_2, sex, region]
+	params = [name_2, sex_name_2, region]
 	try: 
 		name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[0,:]
 		name_2_ts = name_2_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values

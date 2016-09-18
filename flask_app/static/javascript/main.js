@@ -23,6 +23,16 @@ vm = new Vue({
       'name':'',
       'sex':''
     },
+    lookup_sex_selection:{
+      prim_name:{
+        male_selected:false,
+        female_selected:true
+      },
+      ref_name:{
+        male_selected:false,
+        female_selected:true
+      },
+    },
     name_to_add:'',
     name_to_add_sex:'',
     liked_names:[],
@@ -180,6 +190,25 @@ vm = new Vue({
     }
   },
   methods: {
+    lookup_prim_change_sex_to: function(change_to){
+      if(change_to == 'M'){
+          
+          this.lookup_sex_selection['prim_name']['male_selected']=true
+          this.lookup_sex_selection['prim_name']['female_selected']=false
+      }else if(change_to == 'F') {
+          this.lookup_sex_selection['prim_name']['male_selected']=false
+          this.lookup_sex_selection['prim_name']['female_selected']=true
+      }
+    },
+    lookup_ref_change_sex_to: function(change_to){
+      if(change_to == 'M'){          
+          this.lookup_sex_selection['ref_name']['male_selected']=true
+          this.lookup_sex_selection['ref_name']['female_selected']=false
+      }else if(change_to == 'F') {
+          this.lookup_sex_selection['ref_name']['male_selected']=false
+          this.lookup_sex_selection['ref_name']['female_selected']=true
+      }
+    },
     activate_page: function(which_one){
       this.stats_div = true
       for(page in this.active_page){
@@ -296,9 +325,10 @@ vm = new Vue({
       		url='/get_stats',
       		data={
       			'name_1':this.name_1,
-      			'name_2':this.name_2,
+            'name_2':this.name_2,
+            'sex_name_1':(this.lookup_sex_selection['prim_name']['male_selected'] ? "M" : "F"),
+            'sex_name_2':(this.lookup_sex_selection['ref_name']['male_selected'] ? "M" : "F"),
       			'region':this.region,
-      			'sex':this.sex,
       			'user_ID':user_ID,
       			'session_ID':session_ID
       		},
