@@ -13,15 +13,21 @@ vm = new Vue({
       list:true,
       about:true,
     },
-    spinning_wheel_suggestions:true,
+    global_spinning_wheel:true,
     stats_div:true,
   	name_1: '',
   	name_2: '',
+    name_1_meaning:'',
+    name_2_meaning:'',
   	suggestion_request_sex:'',
   	region:'',
     returned_suggestion:{
       'name':'',
       'sex':''
+    },
+    suggestion_sex:{
+      male_selected:false,
+      female_selected:true
     },
     lookup_sex_selection:{
       prim_name:{
@@ -190,9 +196,19 @@ vm = new Vue({
     }
   },
   methods: {
+    suggestion_change_sex_to:function(change_to){
+      this.suggestion_request_sex = change_to
+      if(change_to =='M'){
+        this.suggestion_sex['male_selected']=true
+        this.suggestion_sex['female_selected']=false
+      }else{
+        this.suggestion_sex['male_selected']=false
+        this.suggestion_sex['female_selected']=true
+      }
+      stringer_initialize()
+    },
     lookup_prim_change_sex_to: function(change_to){
       if(change_to == 'M'){
-          
           this.lookup_sex_selection['prim_name']['male_selected']=true
           this.lookup_sex_selection['prim_name']['female_selected']=false
       }else if(change_to == 'F') {
@@ -215,7 +231,8 @@ vm = new Vue({
         if(page==which_one) this.active_page[page]=false 
         else this.active_page[page]=true 
       }
-      if(which_one=='suggest') this.get_suggestion()
+      //if(which_one=='suggest') this.get_suggestion()
+      if(which_one=='suggest') stringer_initialize()
       if(which_one=='list') this.request_liked_names()
       // Anoying method to close the navbar
       $('.navbar-collapse.collapse').collapse('hide')
@@ -248,7 +265,8 @@ vm = new Vue({
             'requested_sex':pass_this.suggestion_request_sex,
             'previous_suggestion':pass_this.returned_suggestion['name'],
             'previous_suggestion_sex':pass_this.returned_suggestion['sex'],
-            'feedback':feedback
+            'feedback':feedback,
+            'how_many':5
           },
           callback=function(return_data){
             pass_this.returned_suggestion['name'] = return_data['name']
@@ -321,6 +339,7 @@ vm = new Vue({
     },      
     submit_names: function () {
 		  var pass_this = this
+      this.global_spinning_wheel=false
       	$.get(
       		url='/get_stats',
       		data={
@@ -358,6 +377,11 @@ vm = new Vue({
 		      			}
 		      		}
       			}
+            console.log(return_data)
+            console.log(return_data['meanings']['name_1'])
+            pass_this.name_1_meaning = return_data['meanings']['name_1']
+            pass_this.name_2_meaning = return_data['meanings']['name_2']
+            pass_this.global_spinning_wheel=true
       			// Draw time series
       			draw_timeseries(return_data['ts'],pass_this.name_1, pass_this.name_2 )
       	})
