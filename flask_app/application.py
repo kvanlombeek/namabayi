@@ -101,20 +101,13 @@ def add_name():
 		sql_conn.execute(query, params)
 		print('Naam is toegevoegd')
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name
+	query = '''SELECT name, sex
 				FROM feedback 
-				WHERE user_ID = %(user_id)s
-				AND feedback = 'like' '''
+				WHERE user_id = %(user_id)s
+				AND feedback = 'like'  '''
 	params = {'user_id':user_ID}
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).loc[:,'name'].values.tolist()
-	liked_names.remove(name)
-	liked_names.append([name])
-	# Strange formating for vue.js array
-	return_dict = []
-	for index, name in enumerate(liked_names):
-		return_dict.append({'name':name})
-	return jsonify(liked_names = return_dict)
-
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	return jsonify(liked_names = liked_names)
 
 @application.route('/create_session_ID', methods=['GET'])
 def create_session_ID():

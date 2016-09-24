@@ -635,37 +635,35 @@
           </h3>
         </div>
       </div>
+
       <div class="row">
         <div class="col-xs-12">
-          <table style="width:100%;font-size:120%">
+          <table style="font-size:120%">
             <tr v-for="item in liked_names_displayed">
-              <td><i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i></td>
-              <td>{{ item.name }}</td> 
-              <td><i class="fa fa-sort" aria-hidden="true"></i></td>
+              <td style="padding-left:10px;padding-right:10px;padding-top:5px"><i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i></td>
+              <td style="padding-top:5px">{{ item.name }}</td> 
+              <!-- <td><i class="fa fa-sort" aria-hidden="true"></i></td> -->
             </tr>
           </table>
-<!--           <ul>
-            <li v-for="item in liked_names">
-              {{ item.name }}
-              <i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i>
-            </li>
-            <li>
-              <input placeholder="Add a name" v-model="name_to_add" >
-              <span>
-                <div class="radio-inline">
-                  <input id="add_radio_girl" type="radio" name="add_name_sex" value="F" v-model="name_to_add_sex" checked>
-                  <label class="radio_label" for="radio_girl">F</label>
-                </div>
-                <div class="radio-inline">
-                  <input id="add_radio_boy" type="radio" name="add_name_sex" value="M" v-model="name_to_add_sex">
-                  <label class="radio_label" for="radio_boy">M</label>
-                </div>
-              </span>
-              <button v-on:click="add_name" class="btn btn-default btn-sm">Add</button>
-            </li>
-          </ul> -->
         </div>
       </div>
+      <div class="row"> 
+        <div class="col-xs-12">
+          <p style="height:25px;"></p>
+        </div>
+      </div>
+      <div class="row"> 
+        <div class="col-xs-12">
+          <table style="width:100%;font-size:120%">
+            <tr>
+              <td><button v-on:click="add_name" class="btn btn-default btn-sm">Add</button></td>
+              <td><input placeholder="Add a name" v-model="name_to_add" ></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="container" v-bind:class="{'hide':active_page['about']}">
       <div class="row"> 
         <div class="col-xs-12">
           <p style="height:50px;"></p>

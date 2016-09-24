@@ -299,6 +299,7 @@ vm = new Vue({
       }
     },
     delete_listed_name:function(event){
+      this.global_spinning_wheel=false
       pass_this = this
       name_to_delete = event['path'][2]['children'][1]['innerText']
       sex = this.selection_liked_names['male_selected'] ? 'M' : 'F'
@@ -311,6 +312,7 @@ vm = new Vue({
             'sex':sex
           },
           callback=function(return_data){
+            pass_this.global_spinning_wheel=true
             pass_this.liked_names = return_data['liked_names']
             pass_this.display_liked_names()
           }
@@ -325,12 +327,13 @@ vm = new Vue({
             'user_ID':user_ID,
             'session_ID':session_ID,
             'name': pass_this.name_to_add,
-            'sex':pass_this.name_to_add_sex
+            'sex': pass_this.selection_liked_names['male_selected'] ? 'M' : 'F'
           },
           callback=function(return_data){
             pass_this.name_to_add = ''
             pass_this.liked_names = return_data['liked_names']
             pass_this.global_spinning_wheel=true
+            pass_this.display_liked_names()
       })
       
     },
