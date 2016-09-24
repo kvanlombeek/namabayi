@@ -318,6 +318,9 @@ vm = new Vue({
           }
       )
     },
+    move_rank_up:function(event){
+      console.log('move rank up')
+    },
     add_name:function(event){
       pass_this = this
       this.global_spinning_wheel=false

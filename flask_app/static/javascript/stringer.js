@@ -37,7 +37,7 @@ function get_stringer_suggestion(how_many, initialise){
           callback=function(return_data){
 
           	if(initialise){
-				// Initialise, add the first 5 strings on the page. DID IS NIET CLEAN
+				// Initialise, add the first 5 strings on the page. DIT IS NIET CLEAN
           		sug_names_ret_backend = return_data['names']
 	          	sug_names_in_frontend = {}
 	          	// Remove all the spans from the canvas
@@ -75,7 +75,7 @@ function get_stringer_suggestion(how_many, initialise){
 							.style("width","100%")
 							.attr("class", "text-center");
 
-	          	}else{
+	        }else{
 	          		max_key = d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1]
 	          		for(var i=0;i<return_data['names'].length;i++){
 	          			sug_names_in_frontend[max_key+i] ={}
