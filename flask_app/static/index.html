@@ -553,7 +553,7 @@
             <h3>Suggesties:</h3>
             <br>
           </div>
-          <div class="col-xs-6 text-center">
+          <div class="col-xs-6 text-right">
             <h3>
               <span v-on:click="suggestion_change_sex_to('F')" 
               v-bind:class="{'k_btn k_btn-default':suggestion_sex['male_selected'],
@@ -579,12 +579,72 @@
         </div>
       </div>
 
-    <div class="container" v-bind:class="{'hide':active_page['list']}">
+<!--     <div class="container" v-bind:class="{'hide':active_page['list']}">
       <div class="row"> 
         <div class="col-xs-12">
+          <h3>Login to save</h3>
+          <h3>
+            <span v-on:click="open_create_login" class="k_btn k_btn-default">Create login</span>
+            <span v-on:click="open_login" class="k_btn k_btn-default">Login</span>
+          </h3>
+        </div>
+      </div> -->
+<!--       <div class="row"> 
+        <div class="col-xs-12">
+          <h3>Create login</h3>
+        </div>
+        <div class="col-xs-12">
+            <div class="form-group">  
+              <input class="form-control" id="email" placeholder="Email" v-model="user_login['email']">
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div class="form-group">  
+              <input class="form-control" id="password" placeholder="Password" v-model="user_login['password']">
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div class="form-group">  
+              <input class="form-control" id="repeat_password" placeholder="Repeat password" v-model="user_login['repeat_password']">
+            </div>
+        </div>
+      </div> -->
+<!--     </div>
+    <div class="container" v-bind:class="{'hide':active_page['list']}">
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="border_top"></div>
+          </div>
+        </div>
+    </div> -->
+    <div class="container" v-bind:class="{'hide':active_page['list']}">
+      <div class="row"> 
+        <div class="col-xs-7">
           <h3>Liked names</h3>
-          <p>Dit is een lijst met alle namen dewelke je reeds hebt geliked. We gebruiken deze lijst om beter suggesties te maken, dus zorg ervoor dat er steeds minstens 10 namen instaan. Hoe meer namen in de lijst, hoe beter de suggesties!</p>
-          <ul>
+        </div>
+        <div class="class-xs-5 text-center">
+          <h3>
+            <span v-on:click="change_sex_liked_names('F')" 
+              v-bind:class="{'k_btn k_btn-default':selection_liked_names['male_selected'],
+                        'k_btn k_btn-primary':selection_liked_names['female_selected']}">
+                        <i class="fa fa-venus" aria-hidden="true"></i></span>
+            <span v-on:click="change_sex_liked_names('M')" 
+              v-bind:class="{'k_btn k_btn-default':selection_liked_names['female_selected'],
+                        'k_btn k_btn-primary':selection_liked_names['male_selected']}">
+                        <i class="fa fa-mars" aria-hidden="true"></i></span>
+          </h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
+          <table style="width:100%;font-size:120%">
+            <tr v-for="item in liked_names_displayed">
+              <td><i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i></td>
+              <td>{{ item.name }}</td> 
+              <td><i class="fa fa-sort" aria-hidden="true"></i></td>
+            </tr>
+          </table>
+<!--           <ul>
             <li v-for="item in liked_names">
               {{ item.name }}
               <i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name"></i>
@@ -603,7 +663,7 @@
               </span>
               <button v-on:click="add_name" class="btn btn-default btn-sm">Add</button>
             </li>
-          </ul>
+          </ul> -->
         </div>
       </div>
       <div class="row"> 

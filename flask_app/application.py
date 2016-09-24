@@ -41,42 +41,37 @@ def request_liked_names():
 	user_ID = request.args.get('user_ID')
 
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
-	query = '''SELECT name
+	query = '''SELECT name, sex
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like' '''
 	params = {'user_id':user_ID}	
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).loc[:,'name'].values
-	# Strange formating for vue.js array
-	return_dict = []
-	for index, name in enumerate(liked_names):
-		return_dict.append({'name':name})
-	return jsonify(liked_names = return_dict)
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	return jsonify(liked_names = liked_names)
 
 @application.route('/delete_name', methods=['GET'])
 def delete_name():
 	user_ID = request.args.get('user_ID')
+	sex = request.args.get('sex')
 	name = request.args.get('name').strip().title()
+	print('Name to delete : %s of sex %s ' %(name, sex))
 	# Update the table, change the feedback of the particular name to no_like
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	query = '''UPDATE feedback 
 					SET feedback = 'no_like' 
 					WHERE name = %(name)s 
-					AND user_id = %(user_id)s'''
-	params = {'name':name, 'user_id':user_ID}
+					AND user_id = %(user_id)s 
+					AND sex  = %(sex)s'''
+	params = {'name':name, 'user_id':user_ID, 'sex':sex}
 	sql_conn.execute(query, params)
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name
+	query = '''SELECT name, sex
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like'  '''
 	params = {'user_id':user_ID}
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).loc[:,'name'].values
-	# Strange formating for vue.js array
-	return_dict = []
-	for index, name in enumerate(liked_names):
-		return_dict.append({'name':name})
-	return jsonify(liked_names = return_dict)
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	return jsonify(liked_names = liked_names)
 
 @application.route('/add_name', methods=['GET'])
 def add_name():

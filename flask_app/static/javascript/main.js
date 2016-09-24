@@ -1,5 +1,4 @@
 
-
 var session_ID;
 var user_ID;
 var test_event
@@ -29,6 +28,10 @@ vm = new Vue({
       male_selected:false,
       female_selected:true
     },
+    selection_liked_names:{
+      male_selected:true,
+      female_selected:false
+    },
     lookup_sex_selection:{
       prim_name:{
         male_selected:false,
@@ -42,6 +45,7 @@ vm = new Vue({
     name_to_add:'',
     name_to_add_sex:'',
     liked_names:[],
+    liked_names_displayed:[],
   	score_original:{
   		name_1:{
   			1:{ full: true, half_empty: false, empty: false },
@@ -296,15 +300,19 @@ vm = new Vue({
     },
     delete_listed_name:function(event){
       pass_this = this
-      name_to_delete = event['path'][1]['innerText']
+      name_to_delete = event['path'][2]['children'][1]['innerText']
+      sex = this.selection_liked_names['male_selected'] ? 'M' : 'F'
+      console.log('Delete : ' + name_to_delete + ' of sex ' + sex)
       $.get(
           url='/delete_name',
           data={
             'user_ID':user_ID,
-            'name':name_to_delete
+            'name':name_to_delete,
+            'sex':sex
           },
           callback=function(return_data){
             pass_this.liked_names = return_data['liked_names']
+            pass_this.display_liked_names()
           }
       )
     },
@@ -326,6 +334,27 @@ vm = new Vue({
       })
       
     },
+    change_sex_liked_names:function(change_to){
+      if(change_to =='M'){
+        this.selection_liked_names['male_selected']=true
+        this.selection_liked_names['female_selected']=false
+      }else{
+        this.selection_liked_names['male_selected']=false
+        this.selection_liked_names['female_selected']=true
+      }
+      this.display_liked_names()
+    },
+    display_liked_names:function(){
+      //filter displayed names based on the button
+      pass_this = this
+      this.liked_names_displayed = this.liked_names.filter(function(liked_name){
+        if(pass_this.selection_liked_names['male_selected']){
+          return liked_name['sex'] == 'M'  
+        }else{
+          return liked_name['sex'] == 'F'  
+        }  
+      })
+    },
     request_liked_names:function(){
         var pass_this = this
         $.get(
@@ -335,6 +364,7 @@ vm = new Vue({
           },
           callback=function(return_data){
             pass_this.liked_names = return_data['liked_names']
+            pass_this.display_liked_names()
           })
     },      
     submit_names: function () {
