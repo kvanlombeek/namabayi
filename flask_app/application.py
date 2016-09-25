@@ -82,8 +82,8 @@ def add_name():
 	# Update the table, change the feedback of the particular name to no_like
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	# First check if the name is not in there
-	query = '''SELECT * FROM feedback WHERE name = %(name)s AND user_id = %(user_id)s'''
-	params = {'name':name, 'user_id': user_ID}
+	query = '''SELECT * FROM feedback WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
+	params = {'name':name, 'user_id': user_ID, 'sex':sex}
 	test = pd.read_sql(sql = query, con = sql_conn, params = params)
 	# Hier zt een mini bug in, als de user eerst op niet like heeft geduwd, kan hij de naam niet meer toevoegen
 	if(len(test>0)):

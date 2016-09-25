@@ -299,10 +299,9 @@ vm = new Vue({
         )
       }
     },
-    delete_listed_name:function(event){
-      this.global_spinning_wheel=false
+    delete_listed_name:function(name_to_delete){
+      this.global_spinning_wheel=false      
       pass_this = this
-      name_to_delete = event['path'][2]['children'][1]['innerText']
       sex = this.selection_liked_names['male_selected'] ? 'M' : 'F'
       console.log('Delete : ' + name_to_delete + ' of sex ' + sex)
       $.get(

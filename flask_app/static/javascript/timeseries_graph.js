@@ -32,7 +32,7 @@ function draw_timeseries(timeseries, name_1, name_2){
             }]
         },
         tooltip: {
-            valueSuffix: '°C'
+            enabled: false
         },
         legend: {
             layout: 'horizontal',
