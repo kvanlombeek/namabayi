@@ -25,6 +25,14 @@ function stringer_initialize(){
 					
 }
 function get_stringer_suggestion(how_many, initialise){
+	// temp_comm_strings_in_frontend = []
+	// if(sug_names_in_frontend){
+	// 	for(i=0; i<d3.keys(sug_names_in_frontend).length;i++){
+	// 		console.log(sug_names_in_frontend)
+	// 		temp_comm_strings_in_frontend[i] = sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['name']
+	// 	}
+	// }
+
 	if(initialise) vm._data['global_spinning_wheel'] = false
 	$.get(
           url='/get_stringer_suggestion',
@@ -32,7 +40,8 @@ function get_stringer_suggestion(how_many, initialise){
             'user_ID':user_ID,
             'session_ID':session_ID,
             'requested_sex':vm._data['suggestion_sex']['female_selected'] ? 'F':'M',
-            'how_many':how_many,
+            'how_many':how_many
+            //'names_already_in_frontend':temp_comm_strings_in_frontend
           },
           callback=function(return_data){
 

@@ -29,8 +29,8 @@ vm = new Vue({
       female_selected:true
     },
     selection_liked_names:{
-      male_selected:true,
-      female_selected:false
+      male_selected:false,
+      female_selected:true
     },
     lookup_sex_selection:{
       prim_name:{
@@ -271,6 +271,7 @@ vm = new Vue({
             'previous_suggestion_sex':pass_this.returned_suggestion['sex'],
             'feedback':feedback,
             'how_many':5
+            //'names_alread_on_frontend':
           },
           callback=function(return_data){
             pass_this.returned_suggestion['name'] = return_data['name']

@@ -4,7 +4,6 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 import os
 import pandas as pd
 import numpy as np
-import sqlite3
 import datetime
 import time
 import math
@@ -163,6 +162,8 @@ def get_stringer_suggestion():
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
 	requested_sex = request.args.get('requested_sex')
+	#names_already_in_frontend = request.args.get('names_already_in_frontend')
+	#print(names_already_in_frontend)
 	# Check how many postive feedbacks the user already gave.
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	query = '''SELECT *
@@ -178,7 +179,7 @@ def get_stringer_suggestion():
 	
 	# Normal random suggestion
 	#if((n_liked_names < 5) | (n_disliked_names < 5) ):
-	if(n_liked_names <10 ):
+	if(n_liked_names <6 ):
 		query = '''SELECT *
 						FROM voornamen_pivot 
 						WHERE sex = %(sex)s
@@ -194,7 +195,7 @@ def get_stringer_suggestion():
 		return jsonify(names = suggestion, sex = requested_sex)
 
 	# User liked already more than 10 names, train a model and get a scored suggestion
-	if(n_liked_names >= 10):
+	if(n_liked_names >= 6):
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		learning_matrix = pd.read_sql_query('''SELECT voornamen_pivot.*, feedback.feedback
                 							FROM voornamen_pivot, feedback
@@ -220,10 +221,6 @@ def get_stringer_suggestion():
 		model.train(learning_matrix, features_and_types, 'feedback')
 		learning_matrix['odds_ratio'] = model.predict(learning_matrix)
 
-		# Original package or own model:
-		model = Naive_bayes_model()
-		model.train(learning_matrix, features_and_types, 'feedback')
-
 		# Make a suggestion
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		test_sample = pd.read_sql_query('''SELECT * FROM voornamen_pivot
@@ -233,15 +230,14 @@ def get_stringer_suggestion():
 												SELECT name 
 												FROM feedback
 												WHERE user_id = %(user_id)s
-											) ORDER BY RANDOM() LIMIT 500''', con = sql_conn, params=params)
-		test_sample = test_sample.drop(['sex', 'region'], axis = 1)
+											) ORDER BY RANDOM() LIMIT 2000''', con = sql_conn, params=params)
+		test_sample = test_sample.sample(250).drop(['sex', 'region'], axis = 1)
+		print('Hier filtering names based on frontend')
+		#if(names_already_in_frontend):
+		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
 		test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		test_sample['odds_ratio'] = model.predict(test_sample)
 		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False)
-		print('high scores names:')
-		print(test_sample['name'].values[:10])
-		print('low scores names:')
-		print(test_sample['name'].values[-10:])		
 		suggestion = test_sample['name'].values[:how_many].tolist()
 		return jsonify(names = suggestion, sex = requested_sex)
 

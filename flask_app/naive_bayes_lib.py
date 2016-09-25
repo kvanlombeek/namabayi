@@ -45,13 +45,18 @@ class Naive_bayes_model:
         self.features_dict = {}
         self.targets = []
         self.priors = {}
+        self.len_training = 0
     
     def train(self,df, features_dict, target):
         self.features_dict = features_dict
         self.targets = np.unique(df[target])
         for feature, feature_type in features_dict.items():
             self.class_summaries[feature] = self.calculate_class_summary(df[[feature, target]], feature_type, target)
+        print('class summary:')
+        print(self.class_summaries)
         self.calculate_priors(df, target)
+        self.len_training = len(df)
+        print('Len training : %i' %self.len_training)
         
     def calculate_priors(self, df, target):
         self.priors = dict(df[target].value_counts()/len(df))
@@ -102,7 +107,10 @@ class Naive_bayes_model:
                     if(observation[feature]>0): probabilities[target] = self.class_summaries[feature][target]['True']
                     else: probabilities[target] = 1-self.class_summaries[feature][target]['True']
             #print('feature : %s with probs: %s' %(feature, str(probabilities)))
-            odds_ratio += np.log(probabilities[self.targets[0]]/probabilities[self.targets[1]])
+            # Hier probleem, soms delen door 0
+            teller = probabilities[self.targets[0]] + 1.0/self.len_training
+            noemer = probabilities[self.targets[1]] + 1.0/self.len_training
+            odds_ratio += np.log(teller/noemer)
         odds_ratio += np.log(self.priors[self.targets[0]]/self.priors[self.targets[1]])
         return odds_ratio
         
