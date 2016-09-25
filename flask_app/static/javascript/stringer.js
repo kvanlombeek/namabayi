@@ -11,6 +11,8 @@ var number_of_votes = 0;
 
 var man_class_enabled = true
 
+var infinte_loop_enabled = false
+
 //var width_of_div_sorting_strings = $('#div_sorting_strings').width();
 //width_of_div_sorting_strings = 806
 
@@ -19,33 +21,17 @@ function key(d){ return d['key'] }
 function return_key(d){ return d[0] }
 
 function stringer_initialize(){
-
-	//Query the first strings and add them on screen
-	get_stringer_suggestion(10, true)
-					
-}
-function get_stringer_suggestion(how_many, initialise){
-	// temp_comm_strings_in_frontend = []
-	// if(sug_names_in_frontend){
-	// 	for(i=0; i<d3.keys(sug_names_in_frontend).length;i++){
-	// 		console.log(sug_names_in_frontend)
-	// 		temp_comm_strings_in_frontend[i] = sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['name']
-	// 	}
-	// }
-
-	if(initialise) vm._data['global_spinning_wheel'] = false
+	vm._data['global_spinning_wheel'] = false
 	$.get(
           url='/get_stringer_suggestion',
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
             'requested_sex':vm._data['suggestion_sex']['female_selected'] ? 'F':'M',
-            'how_many':how_many
+            'how_many':10
             //'names_already_in_frontend':temp_comm_strings_in_frontend
           },
           callback=function(return_data){
-
-          	if(initialise){
 				// Initialise, add the first 5 strings on the page. DIT IS NIET CLEAN
           		sug_names_ret_backend = return_data['names']
 	          	sug_names_in_frontend = {}
@@ -54,13 +40,11 @@ function get_stringer_suggestion(how_many, initialise){
 					.data(d3.entries(sug_names_in_frontend), key);
 				selection.exit()
 					.remove()
-	          	
 				// Fill up names array
 	          	for(var i=0;i<return_data['names'].length;i++){
 	          		sug_names_in_frontend[i] ={}
 	          		sug_names_in_frontend[i]['name'] = return_data['names'][i]	
 	          	}
-	          	
 	          	// Add the strings in the "to sort div"	
 				selection = d3.select('#div_sorting_strings')
 								.selectAll("span")
@@ -68,7 +52,6 @@ function get_stringer_suggestion(how_many, initialise){
 
 				// Make the active one bigger
 				active_pair_index = d3.keys(sug_names_in_frontend)[0]
-
 				selection.enter()
 							.append("span")
 							.text(function(d){
@@ -84,16 +67,40 @@ function get_stringer_suggestion(how_many, initialise){
 							.style("width","100%")
 							.attr("class", "text-center");
 
-	        }else{
-	          		max_key = d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1]
-	          		for(var i=0;i<return_data['names'].length;i++){
-	          			sug_names_in_frontend[max_key+i] ={}
-	          			sug_names_in_frontend[max_key+i]['name'] = return_data['names'][i]	
-	          		}
-	          		// When the suggestion are returned, update table
-	          		update_d3_string_pairs_table()
-	          	}
-	        vm._data['global_spinning_wheel'] = true	
+				vm._data['global_spinning_wheel'] = true
+			})				
+}
+function get_stringer_suggestion(how_many, initialise){
+
+	console.log('how many = ' + how_many)
+
+	if(initialise) vm._data['global_spinning_wheel'] = false
+	$.get(
+          url='/get_stringer_suggestion',
+          data={
+            'user_ID':user_ID,
+            'session_ID':session_ID,
+            'requested_sex':vm._data['suggestion_sex']['female_selected'] ? 'F':'M',
+            'how_many':how_many
+            //'names_already_in_frontend':temp_comm_strings_in_frontend
+          },
+          callback=function(return_data){
+          	console.log(return_data)
+      		max_key = d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1]
+      		for(var i=0;i<return_data['names'].length;i++){
+      			sug_names_in_frontend[max_key+i] ={}
+      			sug_names_in_frontend[max_key+i]['name'] = return_data['names'][i]	
+      		}
+      		// When the suggestion are returned, update table
+      		update_d3_string_pairs_table()
+      		// And call itself again if there is less than 10 names on the screen:
+      		if(10 - d3.keys(sug_names_in_frontend).length > 0){
+      			get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
+      		}else{
+      			// Disable infinite loop until user voted again
+      			infinte_loop_enabled = false
+      		}
+
           }
         )
 }
@@ -116,8 +123,8 @@ function actions_after_vote(vote){
 	
 	// Actions to take:
 	// - Return the vote to the backend
-	// - Query a new pair of strings
 	// - Add the new string pair to the list of strings
+	// - If it is the infite loop is not enabled, enable it.
 
 	// // Parameter to keep track of votes
 	number_of_votes = number_of_votes + 1;
@@ -126,21 +133,8 @@ function actions_after_vote(vote){
 	sug_names_in_frontend[active_pair_index]['man_vote'] = vote
 	return_vote(sug_names_in_frontend[active_pair_index]['name'], vote)
 
-	// Query new name
-	get_stringer_suggestion(1,false)
-
 	// Delete the first votes on top of the page, DANGEROUS
 	delete sug_names_in_frontend[d3.keys(sug_names_in_frontend)[0]]
-
-	// // More than 10 votes, start building random forests in backend
-	// if(number_of_votes > 15){
-	// 	if(!backend_communication_loop_running){
-	// 		backend_communication_loop_running = true
-	// 		console.log('Start backend communication')
-	// 		backend_communication_loop()
-	// 		console.log('Does he continue?')
-	// 	}
-	// }
 
 	// Search for active pair
 	var pair_not_found = true
@@ -154,42 +148,12 @@ function actions_after_vote(vote){
 	}
 	// Update the table because a pair is deleted and a new one active
 	update_d3_string_pairs_table()
-}
 
-function backend_communication_loop(){
-	
-	// Return votes that were not yet returned, keep track of how many, this number has to be requested again
-	var temp_how_many_returned = 0
-	for(i=0; i < d3.entries(strings_in_frontend).length; i++){
-		// Is the pair voted?
-		if(d3.values(strings_in_frontend)[i]['man_vote'] != null){
-			if(pairs_returned_to_backend.indexOf(d3.keys(strings_in_frontend)[i]) == -1){
-				return_vote(d3.keys(strings_in_frontend)[i], d3.values(strings_in_frontend)[i]['man_vote'])
-				pairs_returned_to_backend.push(d3.keys(strings_in_frontend)[i])
-				temp_how_many_returned +=1
-			}
-
-		}
+	// If the first vote, start infite loop
+	if(infinte_loop_enabled == false){
+		infinte_loop_enabled = true
+		get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
 	}
-
-	if(temp_how_many_returned == 0){
-		backend_communication_loop_running = false
-		//No reason to continue loop
-		return;
-	}
-
-	// Request new strings
-	if(temp_how_many_returned > 0){
-		query_two_strings(temp_how_many_returned)
-		for(i=0; i<d3.entries(strings_returned_from_backend).length; i++){
-			strings_in_frontend[d3.keys(strings_returned_from_backend)[i]] = strings_returned_from_backend[d3.keys(strings_returned_from_backend)[i]]		
-		}
-	}
-	
-	// Request random forest scores
-	request_rf_backend()
-
-	//setTimeout(backend_communication(), 50000);
 }
 
 function update_d3_string_pairs_table(){
@@ -240,3 +204,10 @@ function update_d3_string_pairs_table(){
 	// 			// })
 }
 
+	// temp_comm_strings_in_frontend = []
+	// if(sug_names_in_frontend){
+	// 	for(i=0; i<d3.keys(sug_names_in_frontend).length;i++){
+	// 		console.log(sug_names_in_frontend)
+	// 		temp_comm_strings_in_frontend[i] = sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['name']
+	// 	}
+	// }

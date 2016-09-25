@@ -175,11 +175,26 @@ def get_stringer_suggestion():
 	
 	n_liked_names = len(names_feedback.loc[names_feedback['feedback'] == 'like',:])
 	n_disliked_names = len(names_feedback.loc[names_feedback['feedback'] != 'like',:])
-	print('User liked already %i names and disliked %i' %(n_liked_names, n_disliked_names))
+	# how many names did he already lookup?
+	query = '''SELECT * 
+				FROM name_lookups 
+				WHERE user_id = %(user_id)s'''
+	lookup_names = pd.read_sql(sql=query, con=sql_conn, params=params)
+
+	lookup_names_1 = lookup_names.loc[lookup_names['sex_name_1']==requested_sex,:]
+	lookup_names_1 = np.unique(lookup_names_1['name_1'].values).tolist()
+	lookup_names_2 = lookup_names.loc[lookup_names['sex_name_2']==requested_sex,:]
+	lookup_names_2 = np.unique(lookup_names_2['name_2'].values).tolist()
+	lookup_names = lookup_names_1
+	lookup_names.extend(lookup_names_2)
+	lookup_names = [lookup_name for lookup_name in lookup_names if lookup_name != '']
+	n_lookup_names = len(lookup_names)
+
+	print('User liked %i  and disliked %i and looked up %i' %(n_liked_names, n_disliked_names, n_lookup_names))
 	
 	# Normal random suggestion
-	#if((n_liked_names < 5) | (n_disliked_names < 5) ):
-	if(n_liked_names <6 ):
+	if(((n_liked_names+n_lookup_names) < 5) | (n_disliked_names < 5) ):
+	#if(n_liked_names <6 ):
 		query = '''SELECT *
 						FROM voornamen_pivot 
 						WHERE sex = %(sex)s
@@ -196,6 +211,7 @@ def get_stringer_suggestion():
 
 	# User liked already more than 10 names, train a model and get a scored suggestion
 	if(n_liked_names >= 6):
+		# Create learning matrix with likes and no likes
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		learning_matrix = pd.read_sql_query('''SELECT voornamen_pivot.*, feedback.feedback
                 							FROM voornamen_pivot, feedback
@@ -203,7 +219,23 @@ def get_stringer_suggestion():
 							                	AND voornamen_pivot.region = 'Vlaanderen'
 							                	AND voornamen_pivot.sex = feedback.sex
 							                	AND feedback.user_id = %(user_id)s
-							                	AND feedback.sex = %(requested_sex)s;''', con = sql_conn, params=params)
+							                	AND feedback.sex = %(requested_sex)s;''', 
+							                	con = sql_conn, params=params)
+		# Apend learning matrix with lookup names
+		if(len(lookup_names)>0):
+			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
+			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
+	                							FROM voornamen_pivot
+								                	WHERE voornamen_pivot.name = ANY(%(lookup_names)s)
+								                	AND voornamen_pivot.region = 'Vlaanderen'
+								                	AND voornamen_pivot.sex = %(requested_sex)s;''', 
+								                	con = sql_conn, params=params)
+			lookup_names['feedback'] = 'like'
+			print('length before concat: %i' %(len(learning_matrix)))
+			learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
+			learning_matrix = learning_matrix.drop_duplicates('name', )
+			print('length after concat: %i' %(len(learning_matrix)))
+
 		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
 		learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		learning_matrix = drop_unwanted_columns(learning_matrix)
@@ -243,8 +275,6 @@ def get_stringer_suggestion():
 
 @application.route('/get_stats', methods=['GET'])
 def get_stats():
-
-	print('in get_stats function')
 	
 	# Request name info
 	name_1 = request.args.get('name_1').strip().title()
@@ -256,8 +286,8 @@ def get_stats():
 	user_ID = request.args.get('user_ID')
 
 	# Store away Lookup info
-	lookup_info = {'session_ID':session_ID,
-					'user_ID':user_ID,
+	lookup_info = {'session_id':session_ID,
+					'user_id':user_ID,
 					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
 					'name_1': name_1,
 					'name_2': name_2,
