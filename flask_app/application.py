@@ -87,7 +87,16 @@ def add_name():
 	test = pd.read_sql(sql = query, con = sql_conn, params = params)
 	# Hier zt een mini bug in, als de user eerst op niet like heeft geduwd, kan hij de naam niet meer toevoegen
 	if(len(test>0)):
-		print('name already added')
+		params={'name':name,
+					'sex':sex,
+					'user_id':user_ID}
+		query = '''UPDATE feedback 
+					SET feedback = 'like' 
+					WHERE name = %(name)s 
+					AND user_id = %(user_id)s 
+					AND sex  = %(sex)s'''
+		sql_conn.execute(query, params)
+		print('Name is up ge date')
 	else:
 		query = '''INSERT INTO feedback 
 				VALUES (%(feedback)s,%(name)s,%(session_id)s,%(time)s,%(user_id)s,%(sex)s)'''
