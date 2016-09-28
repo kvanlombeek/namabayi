@@ -18,6 +18,7 @@ def drop_columns_with_no_variation(df):
 def drop_equal_columns(df):
     columns_to_drop = []
     for column_1 in df.columns:
+        if column_1 == 'feedback': continue
         for column_2 in df.columns:
             if column_1 == column_2: continue
             if(sum(df[column_1] == df[column_2])> (len(df)*0.90)):
@@ -26,6 +27,7 @@ def drop_equal_columns(df):
     columns_to_drop = np.unique(columns_to_drop)
     df = df.drop(columns_to_drop, axis=1)
     return df 
+    
 def keep_only_interesting_origins(df, how_many):
     origin_features = []
     for feature in df.columns:

@@ -13,6 +13,8 @@ var man_class_enabled = true
 
 var infinte_loop_enabled = false
 
+var await_return = false
+
 //var width_of_div_sorting_strings = $('#div_sorting_strings').width();
 //width_of_div_sorting_strings = 806
 
@@ -72,9 +74,8 @@ function stringer_initialize(){
 }
 function get_stringer_suggestion(how_many, initialise){
 
-	console.log('how many = ' + how_many)
-
 	if(initialise) vm._data['global_spinning_wheel'] = false
+	await_return = true
 	$.get(
           url='/get_stringer_suggestion',
           data={
@@ -85,22 +86,25 @@ function get_stringer_suggestion(how_many, initialise){
             //'names_already_in_frontend':temp_comm_strings_in_frontend
           },
           callback=function(return_data){
-          	console.log(return_data)
-      		max_key = d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1]
+
+      		max_key = parseInt(d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1])
+
       		for(var i=0;i<return_data['names'].length;i++){
-      			sug_names_in_frontend[max_key+i] ={}
-      			sug_names_in_frontend[max_key+i]['name'] = return_data['names'][i]	
-      		}
-      		// When the suggestion are returned, update table
+      			new_key = max_key+i+1
+      			sug_names_in_frontend[new_key] = {'name':return_data['names'][i]}
+      		} 		
+
+      		// When the suggestion are returned, disable wait screen, update table
+      		switch_wait_screen('off') 
       		update_d3_string_pairs_table()
+
       		// And call itself again if there is less than 10 names on the screen:
       		if(10 - d3.keys(sug_names_in_frontend).length > 0){
-      			get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
+      			get_stringer_suggestion(20 - d3.keys(sug_names_in_frontend).length,false)
       		}else{
       			// Disable infinite loop until user voted again
       			infinte_loop_enabled = false
       		}
-
           }
         )
 }
@@ -119,6 +123,7 @@ function return_vote(name, vote){
 	});
 }
 
+
 function actions_after_vote(vote){
 	
 	// Actions to take:
@@ -136,12 +141,19 @@ function actions_after_vote(vote){
 	// Delete the first votes on top of the page, DANGEROUS
 	delete sug_names_in_frontend[d3.keys(sug_names_in_frontend)[0]]
 
+	// Fix the bug, if there are no names any more in the front end, let him wait
+	if(d3.keys(sug_names_in_frontend).length == 1){
+	 	console.log('He should be waiting')
+	 	switch_wait_screen('on')
+	}
+
 	// Search for active pair
 	var pair_not_found = true
 	var i = 0;
 	while (pair_not_found){
     	if(sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['man_vote'] == null){
      		active_pair_index = d3.keys(sug_names_in_frontend)[i]
+     		console.log( 'Active pair index: '+ active_pair_index)
      		pair_not_found = false
      	}
      	i++;
@@ -149,10 +161,18 @@ function actions_after_vote(vote){
 	// Update the table because a pair is deleted and a new one active
 	update_d3_string_pairs_table()
 
-	// If the first vote, start infite loop
+	// If the voting loop is not enabled, start it start infite loop
 	if(infinte_loop_enabled == false){
 		infinte_loop_enabled = true
-		get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
+		get_stringer_suggestion(20 - d3.keys(sug_names_in_frontend).length,false)
+	}
+}
+
+function switch_wait_screen(on_off){
+	if(on_off == 'on'){
+		vm._data['global_spinning_wheel'] = false
+	}else{
+		vm._data['global_spinning_wheel'] = true
 	}
 }
 
@@ -170,8 +190,6 @@ function update_d3_string_pairs_table(){
 				.style("display", "block")
 				.style("width","100%")
 				.attr("class", "text-center");
-
-
 
 	selection.style("font-weight", function(d){
 					if(d['key']==active_pair_index){ return 'bold' }else{ return 'normal'}

@@ -232,6 +232,7 @@ def get_stringer_suggestion():
 							                	con = sql_conn, params=params)
 		# Apend learning matrix with lookup names
 		if(len(lookup_names)>0):
+			print('Add lookup names to learning matrix')
 			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
 			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
 	                							FROM voornamen_pivot

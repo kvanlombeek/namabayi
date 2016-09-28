@@ -303,7 +303,6 @@ vm = new Vue({
       this.global_spinning_wheel=false      
       pass_this = this
       sex = this.selection_liked_names['male_selected'] ? 'M' : 'F'
-      console.log('Delete : ' + name_to_delete + ' of sex ' + sex)
       $.get(
           url='/delete_name',
           data={
@@ -363,12 +362,14 @@ vm = new Vue({
     },
     request_liked_names:function(){
         var pass_this = this
+        this.global_spinning_wheel=false
         $.get(
           url='/request_liked_names',
           data={
             'user_ID':user_ID
           },
           callback=function(return_data){
+            pass_this.global_spinning_wheel=true
             pass_this.liked_names = return_data['liked_names']
             pass_this.display_liked_names()
           })
