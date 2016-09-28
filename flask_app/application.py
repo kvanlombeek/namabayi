@@ -40,7 +40,7 @@ def request_liked_names():
 	user_ID = request.args.get('user_ID')
 
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
-	query = '''SELECT name, sex
+	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like' '''
@@ -48,23 +48,68 @@ def request_liked_names():
 	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
 	return jsonify(liked_names = liked_names)
 
+@application.route('/swap_ranks', methods=['GET'])
+def swap_ranks():
+	user_ID = request.args.get('user_ID')
+	sex = request.args.get('sex')
+	name_one = request.args.get('name_one').strip().title()
+	name_two = request.args.get('name_two').strip().title()
+	new_rank_name_one = int(request.args.get('new_rank_name_one'))
+	new_rank_name_two = int(request.args.get('new_rank_name_two'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	# Update name one
+	params = {'name_one':name_one, 'user_id':user_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
+	print('Set %s to new rank %i' %(name_one, new_rank_name_one))
+	query = '''UPDATE feedback 
+					SET rank = %(new_rank_name_one)s
+					WHERE name = %(name_one)s 
+					AND user_id = %(user_id)s 
+					AND sex  = %(sex)s'''
+	sql_conn.execute(query, params)
+	# Update name two
+	params = {'name_two':name_two, 'user_id':user_ID, 'sex':sex, 'new_rank_name_two':new_rank_name_two}
+	print('Set %s to new rank %i' %(name_two, new_rank_name_two))
+	query = '''UPDATE feedback 
+					SET rank = %(new_rank_name_two)s
+					WHERE name = %(name_two)s 
+					AND user_id = %(user_id)s 
+					AND sex  = %(sex)s'''
+	sql_conn.execute(query, params)
+	# Send back the liked names, a bit the same as request_liked_names
+	query = '''SELECT name, sex, rank
+				FROM feedback 
+				WHERE user_id = %(user_id)s
+				AND feedback = 'like'  '''
+	params = {'user_id':user_ID}
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	return jsonify(liked_names = liked_names)	
+
 @application.route('/delete_name', methods=['GET'])
 def delete_name():
 	user_ID = request.args.get('user_ID')
 	sex = request.args.get('sex')
 	name = request.args.get('name').strip().title()
+	rank_deleted_name = request.args.get('rank')
 	print('Name to delete : %s of sex %s ' %(name, sex))
-	# Update the table, change the feedback of the particular name to no_like
+	# TO DO: reset all the ranks!
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	query = '''UPDATE feedback 
-					SET feedback = 'no_like' 
+					SET feedback = 'no_like' , rank = %(rank)s
 					WHERE name = %(name)s 
 					AND user_id = %(user_id)s 
 					AND sex  = %(sex)s'''
-	params = {'name':name, 'user_id':user_ID, 'sex':sex}
+	params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':None}
+	sql_conn.execute(query, params)
+	# Update the ranks
+	query = '''UPDATE feedback 
+					SET rank = rank - 1
+					WHERE user_id = %(user_id)s 
+					AND sex  = %(sex)s
+					AND rank > %(rank)s'''
+	params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':rank_deleted_name}
 	sql_conn.execute(query, params)
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name, sex
+	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like'  '''
@@ -78,6 +123,7 @@ def add_name():
 	session_ID = request.args.get('session_ID')
 	name = request.args.get('name').title()
 	sex = request.args.get('sex')
+	rank = determine_rank_for_new_like(user_ID, sex)
 	print('User %s wants to add name : %s of sex %s' %(user_ID,name,sex) )
 	# Update the table, change the feedback of the particular name to no_like
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
@@ -89,27 +135,30 @@ def add_name():
 	if(len(test>0)):
 		params={'name':name,
 					'sex':sex,
-					'user_id':user_ID}
+					'user_id':user_ID,
+					'rank':rank}
 		query = '''UPDATE feedback 
-					SET feedback = 'like' 
+					SET feedback = 'like' , rank = %(rank)s
 					WHERE name = %(name)s 
 					AND user_id = %(user_id)s 
 					AND sex  = %(sex)s'''
 		sql_conn.execute(query, params)
 		print('Name is up ge date')
 	else:
+
 		query = '''INSERT INTO feedback 
-				VALUES (%(feedback)s,%(name)s,%(session_id)s,%(time)s,%(user_id)s,%(sex)s)'''
+				VALUES (%(feedback)s,%(name)s,%(session_id)s,%(time)s,%(user_id)s,%(sex)s, %(rank)s)'''
 		params={'feedback':'like',
 					'name':name,
 					'session_id':session_ID,
 					'sex':sex,
 					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
-					'user_id':user_ID}
+					'user_id':user_ID,
+					'rank':rank}
 		sql_conn.execute(query, params)
 		print('Naam is toegevoegd')
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name, sex
+	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like'  '''
@@ -150,16 +199,35 @@ def write_dict_to_sql_usage(info_dict, table_name):
 	to_write_away.to_sql(name=table_name,con = sql_conn, if_exists='append',index=False)
 	return None	
 
+def determine_rank_for_new_like(user_id, sex):
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	query = '''SELECT *
+					FROM feedback
+					WHERE user_id = %(user_id)s
+					AND sex = %(sex)s '''
+	params = {'user_id':user_id, 'sex':sex}
+	feedback_already_stored = pd.read_sql(sql=query, con=sql_conn, params = params)
+	if(len(feedback_already_stored) > 0 ): rank = np.max(feedback_already_stored['rank'])+1
+	else: rank = 1	
+	return rank
+
 @application.route('/return_vote', methods=['GET'])
 def return_vote():
 	print('in NEW return vote function')
-	# Request parameters
+	# First determine new rank for a like
+	if(request.args.get('feedback') == 'like'):
+		rank = determine_rank_for_new_like(request.args.get('user_ID'), request.args.get('sex'))
+	else:
+		rank = None	
+
+	# Prepare in dict to easy store
 	feedback = {'session_id':request.args.get('session_ID'),
 				'user_id':request.args.get('user_ID'),
 				'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
 				'feedback':request.args.get('feedback'),
 				'name':request.args.get('name'),
-				'sex':request.args.get('sex')}
+				'sex':request.args.get('sex'),
+				'rank':rank}
 	print(feedback)
 	write_dict_to_sql_usage(feedback, 'feedback')
 	return jsonify(whatever = '')
@@ -273,7 +341,7 @@ def get_stringer_suggestion():
 												FROM feedback
 												WHERE user_id = %(user_id)s
 											) ORDER BY RANDOM() LIMIT 2000''', con = sql_conn, params=params)
-		test_sample = test_sample.sample(250).drop(['sex', 'region'], axis = 1)
+		test_sample = test_sample.sample(500).drop(['sex', 'region'], axis = 1)
 		print('Hier filtering names based on frontend')
 		#if(names_already_in_frontend):
 		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]

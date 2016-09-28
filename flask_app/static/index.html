@@ -642,9 +642,9 @@
         <div class="col-xs-12">
           <table style="font-size:120%">
             <tr v-for="item in liked_names_displayed">
-              <td style="padding-left:10px;padding-right:10px;padding-top:5px"><i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name(item.name)"></i></td>
+              <td style="padding-left:10px;padding-right:10px;padding-top:5px"><i class="fa fa-ban" aria-hidden="true" v-on:click="delete_listed_name(item.name, item.rank)"></i></td>
               <td style="padding-top:5px">{{ item.name }}</td> 
-<!--               <td v-on:click="move_rank_up" style="padding-left:25px;padding-top:5px"><i class="fa fa-sort-asc fa-lg" aria-hidden="true"></i></td> -->
+              <td v-on:click="move_rank_up(item.name)" style="padding-left:25px;padding-top:5px"><i class="fa fa-arrow-up" aria-hidden="true"></i></td>
             </tr>
           </table>
         </div>

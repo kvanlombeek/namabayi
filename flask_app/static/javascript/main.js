@@ -299,7 +299,7 @@ vm = new Vue({
         )
       }
     },
-    delete_listed_name:function(name_to_delete){
+    delete_listed_name:function(name_to_delete, rank){
       this.global_spinning_wheel=false      
       pass_this = this
       sex = this.selection_liked_names['male_selected'] ? 'M' : 'F'
@@ -317,8 +317,56 @@ vm = new Vue({
           }
       )
     },
-    move_rank_up:function(event){
-      console.log('move rank up')
+    move_rank_up:function(name_to_change_rank){
+      // First get the name object of the name clicked
+      pass_this = this
+      name_to_change_rank = this.liked_names_displayed.filter(function(liked_name){
+        if(pass_this.selection_liked_names['male_selected']){
+          return (liked_name['sex'] == 'M') & (liked_name['name'] == name_to_change_rank)
+        }else{
+          return (liked_name['sex'] == 'F')  & (liked_name['name'] == name_to_change_rank)
+        } 
+      })
+      name_to_change_rank = name_to_change_rank[0]
+      // Now get the names above it
+      names_above_in_rank = this.liked_names_displayed.filter(function(liked_name){
+        if(pass_this.selection_liked_names['male_selected']){
+          return (liked_name['sex'] == 'M') & (liked_name['rank'] > name_to_change_rank['rank'])
+        }else{
+          return (liked_name['sex'] == 'F')  & (liked_name['rank'] > name_to_change_rank['rank'])
+        } 
+      })
+      // Get the first name above it
+      closest_rank = names_above_in_rank.sort(function(a, b){return a['rank'] - b['rank']});
+      closest_rank = closest_rank[0]['rank']
+      name_to_swap = this.liked_names_displayed.filter(function(liked_name){
+        if(pass_this.selection_liked_names['male_selected']){
+          return (liked_name['sex'] == 'M') & (liked_name['rank'] == closest_rank)
+        }else{
+          return (liked_name['sex'] == 'F')  & (liked_name['rank'] == closest_rank)
+        } 
+      })
+      name_to_swap = name_to_swap[0]
+      // Send to backend
+      pass_this = this
+      this.global_spinning_wheel=false
+      $.get(
+          url='/swap_ranks',
+          data={
+            'user_ID':user_ID,
+            'name_one': name_to_change_rank['name'],
+            'name_two': name_to_swap['name'],
+            'new_rank_name_one' : name_to_swap['rank'],
+            'new_rank_name_two' : name_to_change_rank['rank'],
+            'sex': pass_this.selection_liked_names['male_selected'] ? 'M' : 'F'
+          },
+          callback=function(return_data){
+            pass_this.liked_names = return_data['liked_names']
+            pass_this.global_spinning_wheel=true
+            pass_this.display_liked_names()
+      })
+
+
     },
     add_name:function(event){
       pass_this = this
@@ -358,6 +406,10 @@ vm = new Vue({
         }else{
           return liked_name['sex'] == 'F'  
         }  
+      })
+      // sort based on the rank. Hoe hoger de rank, hoe hoger op de pagina
+      this.liked_names_displayed = this.liked_names_displayed.sort(function(a,b){
+        return b['rank'] - a['rank']
       })
     },
     request_liked_names:function(){
