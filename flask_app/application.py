@@ -38,7 +38,7 @@ def request_user_ID():
 @application.route('/request_liked_names', methods=['GET'])
 def request_liked_names():
 	user_ID = request.args.get('user_ID')
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
@@ -57,7 +57,7 @@ def swap_ranks():
 	new_rank_name_two = int(request.args.get('new_rank_name_two'))
 	print('Swap ranks of %s and %s ' %(name_one, name_two))
 
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	# Update name one
 	params = {'name_one':name_one, 'user_id':user_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
 	print('Set %s to new rank %i' %(name_one, new_rank_name_one))
@@ -93,7 +93,7 @@ def delete_name():
 	rank_deleted_name = request.args.get('rank')
 	print('Name to delete : %s of sex %s with rank %s ' %(name, sex,rank_deleted_name))
 	# TO DO: reset all the ranks!
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''DELETE FROM feedback 
 					WHERE name = %(name)s 
 					AND user_id = %(user_id)s 
@@ -127,7 +127,7 @@ def add_name():
 	rank = determine_rank_for_new_like(user_ID, sex)
 	print('New rank')
 	# Update the table, change the feedback of the particular name to no_like
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	# First check if the name is not in there
 	query = '''SELECT * FROM feedback 
 					WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
@@ -196,13 +196,13 @@ def create_session_ID():
 
 def write_dict_to_sql_usage(info_dict, table_name):
 	# Write in SQL table lookups
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	to_write_away = pd.DataFrame.from_dict([info_dict])
 	to_write_away.to_sql(name=table_name,con = sql_conn, if_exists='append',index=False)
 	return None	
 
 def determine_rank_for_new_like(user_id, sex):
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
@@ -245,7 +245,7 @@ def get_stringer_suggestion():
 	#names_already_in_frontend = request.args.get('names_already_in_frontend')
 	#print(names_already_in_frontend)
 	# Check how many postive feedbacks the user already gave.
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
@@ -378,7 +378,7 @@ def get_stats():
 	write_dict_to_sql_usage(lookup_info, 'name_lookups')
 
 	# Connection to database
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
+	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	
 	# Query name 1
 	query = '''SELECT *
