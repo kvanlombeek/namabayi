@@ -38,14 +38,13 @@ def request_user_ID():
 @application.route('/request_liked_names', methods=['GET'])
 def request_liked_names():
 	user_ID = request.args.get('user_ID')
-
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
 				AND feedback = 'like' '''
 	params = {'user_id':user_ID}	
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).fillna(0).to_dict(orient='records')
 	return jsonify(liked_names = liked_names)
 
 @application.route('/swap_ranks', methods=['GET'])
@@ -56,6 +55,8 @@ def swap_ranks():
 	name_two = request.args.get('name_two').strip().title()
 	new_rank_name_one = int(request.args.get('new_rank_name_one'))
 	new_rank_name_two = int(request.args.get('new_rank_name_two'))
+	print('Swap ranks of %s and %s ' %(name_one, name_two))
+
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	# Update name one
 	params = {'name_one':name_one, 'user_id':user_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
@@ -90,11 +91,10 @@ def delete_name():
 	sex = request.args.get('sex')
 	name = request.args.get('name').strip().title()
 	rank_deleted_name = request.args.get('rank')
-	print('Name to delete : %s of sex %s ' %(name, sex))
+	print('Name to delete : %s of sex %s with rank %s ' %(name, sex,rank_deleted_name))
 	# TO DO: reset all the ranks!
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
-	query = '''UPDATE feedback 
-					SET feedback = 'no_like' , rank = %(rank)s
+	query = '''DELETE FROM feedback 
 					WHERE name = %(name)s 
 					AND user_id = %(user_id)s 
 					AND sex  = %(sex)s'''
@@ -123,15 +123,17 @@ def add_name():
 	session_ID = request.args.get('session_ID')
 	name = request.args.get('name').title()
 	sex = request.args.get('sex')
-	rank = determine_rank_for_new_like(user_ID, sex)
 	print('User %s wants to add name : %s of sex %s' %(user_ID,name,sex) )
+	rank = determine_rank_for_new_like(user_ID, sex)
+	print('New rank')
 	# Update the table, change the feedback of the particular name to no_like
 	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('kasper', 'VosseM08'))
 	# First check if the name is not in there
-	query = '''SELECT * FROM feedback WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
+	query = '''SELECT * FROM feedback 
+					WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
 	params = {'name':name, 'user_id': user_ID, 'sex':sex}
 	test = pd.read_sql(sql = query, con = sql_conn, params = params)
-	# Hier zt een mini bug in, als de user eerst op niet like heeft geduwd, kan hij de naam niet meer toevoegen
+	# Hier zit een bug in, als de naam al in het systeem zit
 	if(len(test>0)):
 		params={'name':name,
 					'sex':sex,
@@ -204,7 +206,8 @@ def determine_rank_for_new_like(user_id, sex):
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
-					AND sex = %(sex)s '''
+					AND sex = %(sex)s 
+					AND feedback = 'like' '''
 	params = {'user_id':user_id, 'sex':sex}
 	feedback_already_stored = pd.read_sql(sql=query, con=sql_conn, params = params)
 	if(len(feedback_already_stored) > 0 ): rank = np.max(feedback_already_stored['rank'])+1

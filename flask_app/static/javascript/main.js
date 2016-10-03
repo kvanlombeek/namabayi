@@ -308,7 +308,8 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'name':name_to_delete,
-            'sex':sex
+            'sex':sex,
+            'rank':rank
           },
           callback=function(return_data){
             pass_this.global_spinning_wheel=true
@@ -336,6 +337,7 @@ vm = new Vue({
           return (liked_name['sex'] == 'F')  & (liked_name['rank'] > name_to_change_rank['rank'])
         } 
       })
+      if(names_above_in_rank.length ==0 ) return null
       // Get the first name above it
       closest_rank = names_above_in_rank.sort(function(a, b){return a['rank'] - b['rank']});
       closest_rank = closest_rank[0]['rank']
@@ -365,8 +367,6 @@ vm = new Vue({
             pass_this.global_spinning_wheel=true
             pass_this.display_liked_names()
       })
-
-
     },
     add_name:function(event){
       pass_this = this
@@ -411,6 +411,7 @@ vm = new Vue({
       this.liked_names_displayed = this.liked_names_displayed.sort(function(a,b){
         return b['rank'] - a['rank']
       })
+
     },
     request_liked_names:function(){
         var pass_this = this
@@ -422,7 +423,7 @@ vm = new Vue({
           },
           callback=function(return_data){
             pass_this.global_spinning_wheel=true
-            pass_this.liked_names = return_data['liked_names']
+            pass_this.liked_names = return_data['liked_names']            
             pass_this.display_liked_names()
           })
     },      

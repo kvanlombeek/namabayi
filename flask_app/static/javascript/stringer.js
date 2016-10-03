@@ -100,7 +100,7 @@ function get_stringer_suggestion(how_many, initialise){
 
       		// And call itself again if there is less than 10 names on the screen:
       		if(10 - d3.keys(sug_names_in_frontend).length > 0){
-      			get_stringer_suggestion(20 - d3.keys(sug_names_in_frontend).length,false)
+      			get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
       		}else{
       			// Disable infinite loop until user voted again
       			infinte_loop_enabled = false
@@ -164,7 +164,7 @@ function actions_after_vote(vote){
 	// If the voting loop is not enabled, start it start infite loop
 	if(infinte_loop_enabled == false){
 		infinte_loop_enabled = true
-		get_stringer_suggestion(20 - d3.keys(sug_names_in_frontend).length,false)
+		get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
 	}
 }
 
