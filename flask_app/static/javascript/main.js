@@ -14,7 +14,8 @@ vm = new Vue({
     },
     global_spinning_wheel:true,
     stats_div:true,
-  	name_1: '',
+  	landing_page_name:'',
+    name_1: '',
   	name_2: '',
     name_1_meaning:'',
     name_2_meaning:'',
@@ -466,11 +467,67 @@ vm = new Vue({
       			}
             pass_this.name_1_meaning = return_data['meanings']['name_1']
             pass_this.name_2_meaning = return_data['meanings']['name_2']
+            pass_this.lookup_sex_selection.prim_name['female_selected'] = return_data['sexes']['name_1'] == 'F' ? true : false
+            pass_this.lookup_sex_selection.prim_name['male_selected'] = return_data['sexes']['name_1'] == 'M' ? true : false
+            pass_this.lookup_sex_selection.ref_name['female_selected'] = return_data['sexes']['name_2'] == 'F' ? true : false
+            pass_this.lookup_sex_selection.ref_name['male_selected'] = return_data['sexes']['name_2'] == 'M' ? true : false
+            pass_this.name_2 = return_data['names']['name_2']
             pass_this.global_spinning_wheel=true
       			// Draw time series
       			draw_timeseries(return_data['ts'],pass_this.name_1, pass_this.name_2 )
       	})
-    }
+    },
+    submit_names_landing_page:function(){
+      this.activate_page('lookup')
+      var pass_this = this
+      this.global_spinning_wheel=false
+        $.get(
+          url='/get_stats',
+          data={
+            'name_1':this.name_1,
+            'name_2':null,
+            'sex_name_1':null,
+            'sex_name_2':null,
+            'region':this.region,
+            'user_ID':user_ID,
+            'session_ID':session_ID
+          },
+          callback=function(return_data){
+            pass_this.stats_div = false
+            // Set stars
+            score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']
+            name_numbers = ['name_1','name_2']
+            for(i=0; i<score_names.length;i++ ){
+              score_name = score_names[i]
+              for(j=0; j<name_numbers.length; j++){
+                name_number = name_numbers[j]
+                for(k=0; k<4; k++ ){
+                  pass_this[score_name][name_number][k+1]['full'] = false
+                  pass_this[score_name][name_number][k+1]['half_empty'] = false
+                  pass_this[score_name][name_number][k+1]['empty'] = false
+                  if(k + 1 - return_data[score_name][name_number]<0.5){
+                    pass_this[score_name][name_number][k+1]['full'] = true
+                  }else if(k + 1 - return_data[score_name][name_number] < 1){
+                    pass_this[score_name][name_number][k+1]['half_empty'] = true
+                  }else{
+                    pass_this[score_name][name_number][k+1]['empty'] = true
+                  }
+                }
+              }
+            }
+            pass_this.name_1_meaning = return_data['meanings']['name_1']
+            pass_this.name_2_meaning = return_data['meanings']['name_2']
+            pass_this.lookup_sex_selection.prim_name['female_selected'] = return_data['sexes']['name_1'] == 'F' ? true : false
+            pass_this.lookup_sex_selection.prim_name['male_selected'] = return_data['sexes']['name_1'] == 'M' ? true : false
+            pass_this.lookup_sex_selection.ref_name['female_selected'] = return_data['sexes']['name_2'] == 'F' ? true : false
+            pass_this.lookup_sex_selection.ref_name['male_selected'] = return_data['sexes']['name_2'] == 'M' ? true : false
+            pass_this.name_2 = return_data['names']['name_2']
+            pass_this.global_spinning_wheel=true
+            
+            // Draw time series
+            draw_timeseries(return_data['ts'],pass_this.name_1, pass_this.name_2 )
+        })
+    },
   }
 })
 

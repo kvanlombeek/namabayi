@@ -1,3 +1,11 @@
 
-flask_app/data/analsysed_data.sql
+flask_app/data/
 flask_app/.elasticbeanstalk/
+flask_app/venv/
+
+*.pyc
+
+*/.ipynb_checkpoints/
+.ipynb_checkpoints
+
+.DS_Store

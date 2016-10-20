@@ -22,6 +22,8 @@ sys.path.append('../')
 
 application = Flask(__name__, static_url_path='')
 
+sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
+
 @application.route('/request_user_ID', methods=['GET'])
 def request_user_ID():
 	user_ID = b64encode(os.urandom(24)).decode('utf-8')
@@ -38,7 +40,6 @@ def request_user_ID():
 @application.route('/request_liked_names', methods=['GET'])
 def request_liked_names():
 	user_ID = request.args.get('user_ID')
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT name, sex, rank
 				FROM feedback 
 				WHERE user_id = %(user_id)s
@@ -55,12 +56,9 @@ def swap_ranks():
 	name_two = request.args.get('name_two').strip().title()
 	new_rank_name_one = int(request.args.get('new_rank_name_one'))
 	new_rank_name_two = int(request.args.get('new_rank_name_two'))
-	print('Swap ranks of %s and %s ' %(name_one, name_two))
 
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	# Update name one
 	params = {'name_one':name_one, 'user_id':user_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
-	print('Set %s to new rank %i' %(name_one, new_rank_name_one))
 	query = '''UPDATE feedback 
 					SET rank = %(new_rank_name_one)s
 					WHERE name = %(name_one)s 
@@ -69,7 +67,6 @@ def swap_ranks():
 	sql_conn.execute(query, params)
 	# Update name two
 	params = {'name_two':name_two, 'user_id':user_ID, 'sex':sex, 'new_rank_name_two':new_rank_name_two}
-	print('Set %s to new rank %i' %(name_two, new_rank_name_two))
 	query = '''UPDATE feedback 
 					SET rank = %(new_rank_name_two)s
 					WHERE name = %(name_two)s 
@@ -91,9 +88,7 @@ def delete_name():
 	sex = request.args.get('sex')
 	name = request.args.get('name').strip().title()
 	rank_deleted_name = request.args.get('rank')
-	print('Name to delete : %s of sex %s with rank %s ' %(name, sex,rank_deleted_name))
 	# TO DO: reset all the ranks!
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''DELETE FROM feedback 
 					WHERE name = %(name)s 
 					AND user_id = %(user_id)s 
@@ -123,11 +118,8 @@ def add_name():
 	session_ID = request.args.get('session_ID')
 	name = request.args.get('name').title()
 	sex = request.args.get('sex')
-	print('User %s wants to add name : %s of sex %s' %(user_ID,name,sex) )
 	rank = determine_rank_for_new_like(user_ID, sex)
-	print('New rank')
 	# Update the table, change the feedback of the particular name to no_like
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	# First check if the name is not in there
 	query = '''SELECT * FROM feedback 
 					WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
@@ -145,7 +137,6 @@ def add_name():
 					AND user_id = %(user_id)s 
 					AND sex  = %(sex)s'''
 		sql_conn.execute(query, params)
-		print('Name is up ge date')
 	else:
 
 		query = '''INSERT INTO feedback 
@@ -158,7 +149,6 @@ def add_name():
 					'user_id':user_ID,
 					'rank':rank}
 		sql_conn.execute(query, params)
-		print('Naam is toegevoegd')
 	# Send back the liked names, a bit the same as request_liked_names
 	query = '''SELECT name, sex, rank
 				FROM feedback 
@@ -196,13 +186,11 @@ def create_session_ID():
 
 def write_dict_to_sql_usage(info_dict, table_name):
 	# Write in SQL table lookups
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	to_write_away = pd.DataFrame.from_dict([info_dict])
 	to_write_away.to_sql(name=table_name,con = sql_conn, if_exists='append',index=False)
 	return None	
 
 def determine_rank_for_new_like(user_id, sex):
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
@@ -216,7 +204,6 @@ def determine_rank_for_new_like(user_id, sex):
 
 @application.route('/return_vote', methods=['GET'])
 def return_vote():
-	print('in NEW return vote function')
 	# First determine new rank for a like
 	if(request.args.get('feedback') == 'like'):
 		rank = determine_rank_for_new_like(request.args.get('user_ID'), request.args.get('sex'))
@@ -231,7 +218,6 @@ def return_vote():
 				'name':request.args.get('name'),
 				'sex':request.args.get('sex'),
 				'rank':rank}
-	print(feedback)
 	write_dict_to_sql_usage(feedback, 'feedback')
 	return jsonify(whatever = '')
 
@@ -245,7 +231,6 @@ def get_stringer_suggestion():
 	#names_already_in_frontend = request.args.get('names_already_in_frontend')
 	#print(names_already_in_frontend)
 	# Check how many postive feedbacks the user already gave.
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
@@ -270,7 +255,6 @@ def get_stringer_suggestion():
 	lookup_names = [lookup_name for lookup_name in lookup_names if lookup_name != '']
 	n_lookup_names = len(lookup_names)
 
-	print('User liked %i  and disliked %i and looked up %i' %(n_liked_names, n_disliked_names, n_lookup_names))
 	
 	# Normal random suggestion
 	if(((n_liked_names+n_lookup_names) < 5) | (n_disliked_names < 5) ):
@@ -303,7 +287,6 @@ def get_stringer_suggestion():
 							                	con = sql_conn, params=params)
 		# Apend learning matrix with lookup names
 		if(len(lookup_names)>0):
-			print('Add lookup names to learning matrix')
 			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
 			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
 	                							FROM voornamen_pivot
@@ -312,10 +295,8 @@ def get_stringer_suggestion():
 								                	AND voornamen_pivot.sex = %(requested_sex)s;''', 
 								                	con = sql_conn, params=params)
 			lookup_names['feedback'] = 'like'
-			print('length before concat: %i' %(len(learning_matrix)))
 			learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
 			learning_matrix = learning_matrix.drop_duplicates('name', )
-			print('length after concat: %i' %(len(learning_matrix)))
 
 		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
 		learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
@@ -345,7 +326,6 @@ def get_stringer_suggestion():
 												WHERE user_id = %(user_id)s
 											) ORDER BY RANDOM() LIMIT 2000''', con = sql_conn, params=params)
 		test_sample = test_sample.sample(500).drop(['sex', 'region'], axis = 1)
-		print('Hier filtering names based on frontend')
 		#if(names_already_in_frontend):
 		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
 		test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
@@ -365,6 +345,7 @@ def get_stats():
 	region = request.args.get('region')
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
+	from_landing_page = sex_name_1==''
 
 	# Store away Lookup info
 	lookup_info = {'session_id':session_ID,
@@ -374,22 +355,27 @@ def get_stats():
 					'name_2': name_2,
 					'region':region,
 					'sex_name_1':sex_name_1,
-					'sex_name_2':sex_name_2}
+					'sex_name_2':sex_name_2,
+					'from_landing_page' :from_landing_page}
 	write_dict_to_sql_usage(lookup_info, 'name_lookups')
-
-	# Connection to database
-	sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 	
 	# Query name 1
 	query = '''SELECT *
 				FROM voornamen_pivot 
 				WHERE name = %(name)s
-				AND sex = %(sex)s
 				AND region = %(region)s
 				LIMIT 1'''
-	params = {'name':name_1, 'sex':sex_name_1, 'region':region}
+	params = {'name':name_1,'region':region}
 	try: 
-		name_1_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[0,:]
+		name_1_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
+		# If sex first name is undefined,user did not pick sex or comes from landing page,
+		# query both sexes and pick the sex where the name is the most popular
+		if(sex_name_1 == ''):
+			name_1_kpis = name_1_kpis.loc[name_1_kpis['all_ages'] == np.max(name_1_kpis['all_ages']),:].loc[0,:]
+			name_1_kpis = name_1_kpis
+			sex_name_1 = name_1_kpis['sex']
+		else:
+			name_1_kpis = name_1_kpis.loc[0,:]
 		name_1_ts = name_1_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
 		name_1_meaning = name_1_kpis['meaning']
 	except:
@@ -397,16 +383,38 @@ def get_stats():
 		name_1_ts = np.repeat(0, 20)
 		name_1_meaning = 'Unknown'
 	
-	# Query name 2
-	params = {'name':name_2, 'sex':sex_name_2, 'region':region}
-	try: 
-		name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[0,:]
+	# Query name 2, if name is undefined (might be coming from landing page), select a name that is close the first name
+	if(name_2 == ''):
+		query = '''	SELECT *, public.levenshtein(%(name)s, name) as distance
+					FROM voornamen_pivot
+					WHERE sex = %(sex)s
+					AND region = 'Vlaanderen'
+					AND name <> %(name)s
+					ORDER BY distance, all_ages DESC
+					LIMIT 2;'''
+		params = {'name':str(name_1), 'sex':sex_name_1}
+		name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
+		name_2_kpis = name_2_kpis.loc[np.random.randint(2),:]
+		name_2 = name_2_kpis['name']
 		name_2_ts = name_2_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
 		name_2_meaning = name_2_kpis['meaning']
-	except:
-		name_2_kpis = pd.Series({'score_original':5.0,'score_vintage':0.0,'score_classic':0.0,'score_trend':0.0,'score_popular':0.0})
-		name_2_ts = np.repeat(0, 20)
-		name_2_meaning = 'Unknown'
+		sex_name_2 = name_1_kpis['sex']
+	# Query the second name in the normal way as it is defined by the user
+	else:
+		query = '''SELECT *
+				FROM voornamen_pivot 
+				WHERE name = %(name)s
+				AND region = %(region)s
+				LIMIT 1'''				
+		params = {'name':name_2, 'region':region}
+		try: 
+			name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[0,:]
+			name_2_ts = name_2_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
+			name_2_meaning = name_2_kpis['meaning']
+		except:
+			name_2_kpis = pd.Series({'score_original':5.0,'score_vintage':0.0,'score_classic':0.0,'score_trend':0.0,'score_popular':0.0})
+			name_2_ts = np.repeat(0, 20)
+			name_2_meaning = 'Unknown'
 
 	return jsonify(score_original = {'name_1': np.round(name_1_kpis['score_original'],1),
 									 'name_2': np.round(name_2_kpis['score_original'],1)},
@@ -421,7 +429,11 @@ def get_stats():
 					ts = {'name_1': name_1_ts.tolist(),
 						  'name_2': name_2_ts.tolist()},
 					meanings = {'name_1':name_1_meaning,
-								'name_2':name_2_meaning})
+								'name_2':name_2_meaning},
+					sexes = {'name_1':sex_name_1,
+							 'name_2':sex_name_2},
+					names = {'name_1':name_1,
+							 'name_2':name_2})
 
 @application.route('/')
 def index():

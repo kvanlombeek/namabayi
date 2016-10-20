@@ -3,8 +3,8 @@
 <html>
   <head>
 
-    <title>Namabayi</title>
-    
+    <title>NamaBayi | BabyNaam suggesties op maat</title>
+    <meta name="description" content="Met NamaBayi [BabyNaam] was naar een babynaam zoeken nog nooit zo leuk">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 
@@ -131,8 +131,10 @@
           z-index: 9999;
           top:0;
           left:0;
-          height:100%;
-          width:100%;
+          right:0;
+          bottom:0;
+          /*height:100%;
+          width:100%;*/
           background-color:rgba(0,0,0,0.1);
       }
       #spinning_wheel .spinner {
@@ -140,6 +142,9 @@
           top: 50%;
           left: 50%;
           transform: translateX(-50%) translateY(-50%);
+      }
+      #landing_page{
+                
       }
 
 
@@ -183,9 +188,26 @@
       </div>
     </div>
     <div class="container" v-bind:class="{'hide':active_page['welcome']}">
-      <div id="header" class="row">
-        <div class="col-xs-12">
-          <h3>Wat is Namabayi</h3>
+      <div  class="row">
+        <div class="col-xs-12" id="landing_page">
+          <p style='visibility: hidden;'>.</p>
+          <p style='visibility: hidden;'>.</p>
+          <p><span class="h3">NamaBayi<span style='visibility: hidden;'>..</span></span>[BabyNaam]</p>
+          <p>Baby naam suggesties op maat</p>
+          <p style='visibility: hidden;'>.</p>
+          <p>Wat is je huidige favoriete naam?</p> 
+          <div class='row'>
+            <div class="col-xs-8">
+              <div class="form-group">  
+                  <input class="form-control" id="name_1" placeholder="Enter name" v-model="name_1">
+              </div>
+            </div>
+            <div class="col-xs-4">
+              <button v-on:click="submit_names_landing_page" class="btn btn-default"><i class="fa fa-search" aria-hidden="true"></i> Zoek!</button><br>
+            </div>
+          </div>
+          <p style='visibility: hidden;'>.</p>
+<!--           <h3>Wat is Namabayi</h3>
           <p>Namabayi, Indonesisch voor babynaam, helpt je bij kiezen van een naam.</p>
           <p>Je kan <b>statiestieken</b> opzoeken over een naam dat je in gedachten hebt. Of je kan de applicatie zelf <b>suggesties</b> laten doen. Hoe meer suggesties je liked, hoe intelligenter het suggestie mechanisme wordt.</p>
           <p>De statistieken bij de namen zijn zelf berekend en als volgt bepaald:
@@ -197,7 +219,7 @@
               <li><b>Trending</b>: Is de populariteit van de naam de laatste jaren aan het stijgen?</li>
             </ul>
           </p>
-          <p>Voor suggesties: kasper.vanlombeeek at gmail.com. Veel succes bij de zoektocht naar een leuke naam!</p>
+          <p>Voor suggesties: kasper.vanlombeeek at gmail.com. Veel succes bij de zoektocht naar een leuke naam!</p> -->
         </div>
       </div>
       <div class="row"> 
@@ -207,12 +229,13 @@
       </div>
     </div>
     <div class="container" v-bind:class="{'hide':active_page['lookup']}">
-      <div id="header" class="row">
+<!--       <div id="header" class="row">
           <div class="col-xs-12">
             <h3>Zoek</h3>
-            <p>Zoek statistieken van een naam en vergelijk deze met een andere naam.</p><br>
           </div>
-          <div class="col-xs-12"><label for="name_1">Welke naam had je in gedachten?</label></div>
+      </div> -->
+<!--           <div class="col-xs-12"><label for="name_1">Naam 1</label></div> -->
+      <div id="header" class="row">    
           <div class="col-xs-6 col-sm-6">
             <div class="form-group">  
               <input class="form-control" id="name_1" placeholder="Naam" v-model="name_1">
@@ -229,7 +252,9 @@
                         'k_btn k_btn-primary':lookup_sex_selection['prim_name']['male_selected']}">
                         <i class="fa fa-mars" aria-hidden="true"></i></span>
           </div>
-          <div class="col-xs-12"><label for="name_1">Vergelijk met</label></div>
+        </div>
+        <div id="header" class="row"> 
+<!--           <div class="col-xs-12"><label for="name_1">Naam 2</label></div> -->
           <div class="col-xs-6 col-sm-6">
             <div class="form-group">
               <input class="form-control" id="name_2" placeholder="Naam" v-model="name_2">
