@@ -1,0 +1,18 @@
+
+#EBE2D5 (lichtgrijs)
+#D3C0AA (beige)
+#F6AF5B (geel)
+#DC5F57 (rood)
+#9D6787 (paars)
+#38BBC7 (blauw)
+#4DB05C (groen)
+
+
+
+
+R66/G179/B76
+R34/G179/B200
+R247/G79/B69
+R252/G182/B67
+R146/G80/B122
+R236/G226/B214
