@@ -9,3 +9,5 @@ flask_app/venv/
 .ipynb_checkpoints
 
 .DS_Store
+flask_app/.DS_Store
+*.zip

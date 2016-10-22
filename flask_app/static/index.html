@@ -10,149 +10,15 @@
 
     <script src="https://use.fontawesome.com/2cfb7e51c3.js"></script>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
-    <link rel="stylesheet" type="text/css" href="css/slider.css">
-
+    <link rel="stylesheet" type="text/css" href="css/custom_css.css">
+    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans:300i,400,400i,600,700" rel="stylesheet">
 
     <meta name="theme-color" content="#ffffff">
 
     <style>
-/*      body{
-        background-color:#FAFAFA;
-      }*/
-      @media (min-width: 1200px) {
-        .container{
-            max-width: 970px;
-        }
-      }
-      .border_top{
-        margin-top: 20px;
-        border-style: solid;
-        border-bottom-width:0;
-        border-left-width:0;
-        border-right-width:0;
-      }
-      .hide_icon{
-        display:none;
-      }
-      .k_btn {
-          display: inline-block;
-          padding: 6px 12px;
-          margin-bottom: 0;
-          font-size: 14px;
-          font-weight: 400;
-          line-height: 1.42857143;
-          text-align: center;
-          white-space: nowrap;
-          vertical-align: middle;
-          -ms-touch-action: manipulation;
-          touch-action: manipulation;
-          cursor: pointer;
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-          background-image: none;
-          border: 1px solid transparent;
-          border-radius: 4px;
-      }
-      .k_btn-default {
-          color: #444;
-          background-color: #fff;
-          border-color: #ddd;
-      }
-      .k_btn-primary {
-          color: black;
-          /*background-color: #337ab7;*/
-          background-color: #e6e6e6;
-          border-color: #ccc;
-      }
-
-      .k_btn-warning {
-          color: #fff;
-          background-color: #f0ad4e;
-          border-color: #eea236;
-      }
-      .radio_label{
-        font-weight:normal;
-      }
-      #result_row_shown{
-        display:block;
-      }
-      #result_row_hidden{
-        display:none;
-      }
-      .kpi_title{
-        border-bottom-width: 1px;
-        border-bottom-style: solid;
-        border-bottom-color: black;
-      }
-      .vcenter {
-          display: inline-block;
-          vertical-align: middle;
-          float: none;
-      }
-      .fa-star {
-          color: gold;
-/*          -webkit-text-stroke-width: 1px;
-          -webkit-text-stroke-color: black;*/
-      }
-      .fa-star-half-o {
-          color: gold;
-/*          -webkit-text-stroke-width: 1px;
-          -webkit-text-stroke-color: black;*/
-      }
-
-/*      .stars{
-        padding:0px;
-      }*/
-      #info_icon_trending{
-        display:inline;
-        vertical-align: super;
-        font-size: 0.8em;
-      }
-      .container.hide{
-        display:none;
-      }
-/*      p {
-          display: none;
-          background-color: yellow;
-          padding: 20px;
-      }
-      #info_icon_trending:hover p,
-      #info_icon_trending:focus p{
-          display: block;
-      }*/
-      #suggestie_h3{
-        margin-top: 10px;
-      }
-
-      #spinning_wheel {
-          position: absolute;
-          z-index: 9999;
-          top:0;
-          left:0;
-          right:0;
-          bottom:0;
-          /*height:100%;
-          width:100%;*/
-          background-color:rgba(0,0,0,0.1);
-      }
-      #spinning_wheel .spinner {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translateX(-50%) translateY(-50%);
-      }
-      #landing_page{
-                
-      }
 
 
     </style>
-
-
-    <!-- Vue.js -->
-    <script src="javascript/vue.js"></script>
 
   </head>
 <!--   <i class="fa fa-search" aria-hidden="true"></i>
@@ -174,7 +40,7 @@
           </div>
           <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-              <li><a v-on:click="activate_page('welcome')">Wat is NamaBayi</a></li>
+<!--               <li><a v-on:click="activate_page('welcome')">Wat is NamaBayi</a></li> -->
               <li><a v-on:click="activate_page('lookup')">Zoek</a></li>
               <li><a v-on:click="activate_page('suggest')">Suggesties</a></li>
               <li><a v-on:click="activate_page('list')">Liked names</a></li>
@@ -192,10 +58,9 @@
         <div class="col-xs-12" id="landing_page">
           <p style='visibility: hidden;'>.</p>
           <p style='visibility: hidden;'>.</p>
-          <p><span class="h3">NamaBayi<span style='visibility: hidden;'>..</span></span>[BabyNaam]</p>
-          <p>Baby naam suggesties op maat</p>
+          <p><span class="h1">NamaBayi<span style='visibility: hidden;'>..</span></span><i>[BabyNaam]</i></p>
           <p style='visibility: hidden;'>.</p>
-          <p>Wat is je huidige favoriete naam?</p> 
+          <p>Babynaam suggesties op maat. Start met je huidige favoriete naam:</p> 
           <div class='row'>
             <div class="col-xs-8">
               <div class="form-group">  
@@ -207,7 +72,7 @@
             </div>
           </div>
           <p style='visibility: hidden;'>.</p>
-<!--           <h3>Wat is Namabayi</h3>
+<!--           <h1>Wat is Namabayi</h1>
           <p>Namabayi, Indonesisch voor babynaam, helpt je bij kiezen van een naam.</p>
           <p>Je kan <b>statiestieken</b> opzoeken over een naam dat je in gedachten hebt. Of je kan de applicatie zelf <b>suggesties</b> laten doen. Hoe meer suggesties je liked, hoe intelligenter het suggestie mechanisme wordt.</p>
           <p>De statistieken bij de namen zijn zelf berekend en als volgt bepaald:
@@ -231,7 +96,7 @@
     <div class="container" v-bind:class="{'hide':active_page['lookup']}">
 <!--       <div id="header" class="row">
           <div class="col-xs-12">
-            <h3>Zoek</h3>
+            <h1>Zoek</h1>
           </div>
       </div> -->
 <!--           <div class="col-xs-12"><label for="name_1">Naam 1</label></div> -->
@@ -242,15 +107,11 @@
             </div>
           </div>
           <div class="col-xs-6 col-sm-6">
-            <span v-on:click="lookup_prim_change_sex_to('F')" 
-            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['prim_name']['male_selected'],
-                        'k_btn k_btn-primary':lookup_sex_selection['prim_name']['female_selected']}">
-                        <i class="fa fa-venus" aria-hidden="true"></i>
+            <span class="text-center" v-on:click="lookup_prim_change_sex" 
+            v-bind:class="{'k_btn k_btn-male':lookup_sex_selection['prim_name']['male_selected'],
+                        'k_btn k_btn-female':lookup_sex_selection['prim_name']['female_selected']}">
+                        <div class='sex_button' v-html="lookup_sex_selection['prim_name']['icon']"></div>
             </span>
-            <span v-on:click="lookup_prim_change_sex_to('M')"
-            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['prim_name']['female_selected'],
-                        'k_btn k_btn-primary':lookup_sex_selection['prim_name']['male_selected']}">
-                        <i class="fa fa-mars" aria-hidden="true"></i></span>
           </div>
         </div>
         <div id="header" class="row"> 
@@ -261,14 +122,11 @@
             </div>
           </div>
           <div class="col-xs-6 col-sm-6">
-            <span v-on:click="lookup_ref_change_sex_to('F')" 
-            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['ref_name']['male_selected'],
-                         'k_btn k_btn-primary':lookup_sex_selection['ref_name']['female_selected']}">
-                        <i class="fa fa-venus" aria-hidden="true"></i></span>
-            <span v-on:click="lookup_ref_change_sex_to('M')" 
-            v-bind:class="{'k_btn k_btn-default':lookup_sex_selection['ref_name']['female_selected'],
-                         'k_btn k_btn-primary':lookup_sex_selection['ref_name']['male_selected']}">
-                        <i class="fa fa-mars" aria-hidden="true"></i></span>
+            <span class="text-center" v-on:click="lookup_ref_change_sex" 
+            v-bind:class="{'k_btn k_btn-male':lookup_sex_selection['ref_name']['male_selected'],
+                         'k_btn k_btn-female':lookup_sex_selection['ref_name']['female_selected']}">
+                        <div class='sex_button' v-html="lookup_sex_selection['ref_name']['icon']"></div>
+            </span>
           </div>
           <!-- Submit button -->
           <div class="col-xs-12">
@@ -311,7 +169,7 @@
     </div>
     <div class="container" id="lookup_stats_results" v-bind:class="{'hide':stats_div}">
       <div class="row">
-        <div class="col-xs-12"><h3>Je naam is</h3></div>
+        <div class="col-xs-12"><h1>Je naam is</h1></div>
         <!-- Table header -->
         <div class="col-xs-4">
         </div>
@@ -530,7 +388,7 @@
     <div class="container" v-bind:class="{'hide':stats_div}">
       <div class="row">  
         <div class="col-xs-12">
-          <h3>Trend</h3>
+          <h1>Trend</h1>
         </div>
       </div>
       <div class="row">  
@@ -557,7 +415,7 @@
     <div class="container" v-bind:class="{'hide':active_page['suggest']}">
         <div class="row">
           <div class="col-xs-12">
-            <h3>Hoe werkt dit?</h3>
+            <h1>Hoe werkt dit?</h1>
             <p>Er zijn duizenden namen. Deze app probeert voor u de juiste te vinden.</p>
             <p>Hoe meer namen u liked, hoe meer het algoritme je voorkeuren leert kennen. Wees in begin dus niet te picky!</p>
           </div>
@@ -577,11 +435,11 @@
     <div class="container" v-bind:class="{'hide':active_page['suggest']}">
         <div class="row" >
           <div class="col-xs-6">
-            <h3>Suggesties:</h3>
+            <h1>Suggesties:</h1>
             <br>
           </div>
           <div class="col-xs-6 text-right">
-            <h3>
+            <h1>
               <span v-on:click="suggestion_change_sex_to('F')" 
               v-bind:class="{'k_btn k_btn-default':suggestion_sex['male_selected'],
                         'k_btn k_btn-primary':suggestion_sex['female_selected']}">
@@ -590,7 +448,7 @@
               v-bind:class="{'k_btn k_btn-default':suggestion_sex['female_selected'],
                         'k_btn k_btn-primary':suggestion_sex['male_selected']}">
                         <i class="fa fa-mars" aria-hidden="true"></i></span>
-            </h3>
+            </h1>
           </div>
         </div>
         <!--       feedback section --> 
@@ -609,16 +467,16 @@
 <!--     <div class="container" v-bind:class="{'hide':active_page['list']}">
       <div class="row"> 
         <div class="col-xs-12">
-          <h3>Login to save</h3>
-          <h3>
+          <h1>Login to save</h1>
+          <h1>
             <span v-on:click="open_create_login" class="k_btn k_btn-default">Create login</span>
             <span v-on:click="open_login" class="k_btn k_btn-default">Login</span>
-          </h3>
+          </h1>
         </div>
       </div> -->
 <!--       <div class="row"> 
         <div class="col-xs-12">
-          <h3>Create login</h3>
+          <h1>Create login</h1>
         </div>
         <div class="col-xs-12">
             <div class="form-group">  
@@ -647,10 +505,10 @@
     <div class="container" v-bind:class="{'hide':active_page['list']}">
       <div class="row"> 
         <div class="col-xs-7">
-          <h3>Liked names</h3>
+          <h1>Liked names</h1>
         </div>
         <div class="class-xs-5 text-center">
-          <h3>
+          <h1>
             <span v-on:click="change_sex_liked_names('F')" 
               v-bind:class="{'k_btn k_btn-default':selection_liked_names['male_selected'],
                         'k_btn k_btn-primary':selection_liked_names['female_selected']}">
@@ -659,7 +517,7 @@
               v-bind:class="{'k_btn k_btn-default':selection_liked_names['female_selected'],
                         'k_btn k_btn-primary':selection_liked_names['male_selected']}">
                         <i class="fa fa-mars" aria-hidden="true"></i></span>
-          </h3>
+          </h1>
         </div>
       </div>
 
@@ -700,7 +558,7 @@
     <div class="container" v-bind:class="{'hide':active_page['about']}">
       <div id="header" class="row">
         <div class="col-xs-12">
-          <h3>About</h3>
+          <h1>About</h1>
           <p>Altough there are many services available for picking a baby name, on a long holiday I decided to build our own. I had in mind that it should be possible to calculate features for each name (time series features, text analysis features and spatial features) and build a recommendation engine on top of them.</p>
           <p>This project demonstrates what I like best, taking an analysis (defining the features and building the model) a step further and build an interactive visualisation around it. By doing so, you can test it out with many examples, using it where ever in the world and send it around to other people.</p>
           <p>For more information or suggestions, feel free to contact me on <a href='kasper.vanlombeek@gmail.com'>kasper.vanlombeek@gmail.com</a></p>
@@ -708,8 +566,11 @@
       </div>
     </div>
 
+    <!-- Vue.js -->
+    <script src="javascript/vue.js"></script>
+
     <!-- jQuery.js -->
-    <script   src="javascript/jquery.js"></script>
+    <script src="javascript/jquery.js"></script>
     
     <!-- bootstrap javascript -->
     <script src="javascript/bootstrap.js"></script>

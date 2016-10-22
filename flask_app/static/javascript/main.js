@@ -36,11 +36,13 @@ vm = new Vue({
     lookup_sex_selection:{
       prim_name:{
         male_selected:false,
-        female_selected:true
+        female_selected:true,
+        icon: "<i class='fa fa-venus' aria-hidden='true'>"
       },
       ref_name:{
         male_selected:false,
-        female_selected:true
+        female_selected:true,
+        icon: "<i class='fa fa-venus' aria-hidden='true'>"
       },
     },
     name_to_add:'',
@@ -212,22 +214,27 @@ vm = new Vue({
       }
       stringer_initialize()
     },
-    lookup_prim_change_sex_to: function(change_to){
-      if(change_to == 'M'){
-          this.lookup_sex_selection['prim_name']['male_selected']=true
-          this.lookup_sex_selection['prim_name']['female_selected']=false
-      }else if(change_to == 'F') {
-          this.lookup_sex_selection['prim_name']['male_selected']=false
-          this.lookup_sex_selection['prim_name']['female_selected']=true
+    lookup_prim_change_sex: function(){
+      console.log('test')
+      if(this.lookup_sex_selection['prim_name']['male_selected']){
+        this.lookup_sex_selection['prim_name']['male_selected'] = false
+        this.lookup_sex_selection['prim_name']['female_selected'] = true
+        this.lookup_sex_selection['prim_name']['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
+      }else{
+        this.lookup_sex_selection['prim_name']['male_selected'] = true
+        this.lookup_sex_selection['prim_name']['female_selected'] = false        
+        this.lookup_sex_selection['prim_name']['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"
       }
     },
-    lookup_ref_change_sex_to: function(change_to){
-      if(change_to == 'M'){          
-          this.lookup_sex_selection['ref_name']['male_selected']=true
-          this.lookup_sex_selection['ref_name']['female_selected']=false
-      }else if(change_to == 'F') {
-          this.lookup_sex_selection['ref_name']['male_selected']=false
-          this.lookup_sex_selection['ref_name']['female_selected']=true
+    lookup_ref_change_sex: function(){
+      if(this.lookup_sex_selection['ref_name']['male_selected']){
+        this.lookup_sex_selection['ref_name']['male_selected'] = false
+        this.lookup_sex_selection['ref_name']['female_selected'] = true
+        this.lookup_sex_selection['ref_name']['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
+      }else{
+        this.lookup_sex_selection['ref_name']['male_selected'] = true
+        this.lookup_sex_selection['ref_name']['female_selected'] = false 
+        this.lookup_sex_selection['ref_name']['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"       
       }
     },
     activate_page: function(which_one){
@@ -471,6 +478,8 @@ vm = new Vue({
             pass_this.lookup_sex_selection.prim_name['male_selected'] = return_data['sexes']['name_1'] == 'M' ? true : false
             pass_this.lookup_sex_selection.ref_name['female_selected'] = return_data['sexes']['name_2'] == 'F' ? true : false
             pass_this.lookup_sex_selection.ref_name['male_selected'] = return_data['sexes']['name_2'] == 'M' ? true : false
+            pass_this.lookup_sex_selection['ref_name']['icon'] = return_data['sexes']['name_2'] == 'M' ? 
+                           "<i class='fa fa-mars' aria-hidden='true'>" : "<i class='fa fa-venus' aria-hidden='true'>"
             pass_this.name_2 = return_data['names']['name_2']
             pass_this.global_spinning_wheel=true
       			// Draw time series
