@@ -257,7 +257,7 @@ def get_stringer_suggestion():
 
 	
 	# Normal random suggestion
-	if(((n_liked_names+n_lookup_names) < 5) | (n_disliked_names < 5) ):
+	if(((n_liked_names+n_lookup_names) < 2) | (n_disliked_names < 2) ):
 	#if(n_liked_names <6 ):
 		query = '''SELECT *
 						FROM voornamen_pivot 
@@ -274,7 +274,8 @@ def get_stringer_suggestion():
 		return jsonify(names = suggestion, sex = requested_sex)
 
 	# User liked already more than 10 names, train a model and get a scored suggestion
-	if(n_liked_names >= 6):
+	if((n_liked_names+n_lookup_names) >= 2 & (n_disliked_names > 2) ):
+		print('Hier1')
 		# Create learning matrix with likes and no likes
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		learning_matrix = pd.read_sql_query('''SELECT voornamen_pivot.*, feedback.feedback
@@ -286,6 +287,7 @@ def get_stringer_suggestion():
 							                	AND feedback.sex = %(requested_sex)s;''', 
 							                	con = sql_conn, params=params)
 		# Apend learning matrix with lookup names
+		print('Hier2')
 		if(len(lookup_names)>0):
 			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
 			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
@@ -298,12 +300,14 @@ def get_stringer_suggestion():
 			learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
 			learning_matrix = learning_matrix.drop_duplicates('name', )
 
+		print('Hier3')
 		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
 		learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		learning_matrix = drop_unwanted_columns(learning_matrix)
 		learning_matrix = drop_columns_with_no_variation(learning_matrix)
 		learning_matrix = keep_only_interesting_origins(learning_matrix,5)
 		learning_matrix = drop_equal_columns(learning_matrix)
+		print('Hier4')
 		# Train
 		features_and_types = {}
 		for feature in learning_matrix.columns:
@@ -314,7 +318,7 @@ def get_stringer_suggestion():
 		model = Naive_bayes_model()
 		model.train(learning_matrix, features_and_types, 'feedback')
 		learning_matrix['odds_ratio'] = model.predict(learning_matrix)
-
+		print('Hier5')
 		# Make a suggestion
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		test_sample = pd.read_sql_query('''SELECT * FROM voornamen_pivot
@@ -324,14 +328,15 @@ def get_stringer_suggestion():
 												SELECT name 
 												FROM feedback
 												WHERE user_id = %(user_id)s
-											) ORDER BY RANDOM() LIMIT 2000''', con = sql_conn, params=params)
-		test_sample = test_sample.sample(500).drop(['sex', 'region'], axis = 1)
+											) ORDER BY RANDOM() LIMIT 1000''', con = sql_conn, params=params)
+		test_sample = test_sample.drop(['sex', 'region'], axis = 1)
 		#if(names_already_in_frontend):
 		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
 		test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		test_sample['odds_ratio'] = model.predict(test_sample)
-		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False)
-		suggestion = test_sample['name'].values[:how_many].tolist()
+		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False).loc[:20,].sample(how_many)
+		suggestion = test_sample['name'].tolist()
+		print('Hier6')
 		return jsonify(names = suggestion, sex = requested_sex)
 
 @application.route('/get_stats', methods=['GET'])
@@ -339,7 +344,7 @@ def get_stats():
 	
 	# Request name info
 	name_1 = request.args.get('name_1').strip().title()
-	name_2 = request.args.get('name_2').strip().title()
+	name_2 = ''
 	sex_name_1 = request.args.get('sex_name_1')
 	sex_name_2 = request.args.get('sex_name_2')
 	region = request.args.get('region')

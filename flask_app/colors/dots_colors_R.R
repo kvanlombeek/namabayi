@@ -30,6 +30,7 @@ ramp <- colorRamp(colors = c(color_blue, 'white' ))
 colors <- rgb( ramp(seq(0, 1, length = 10)), max = 255)
 plot(x = seq(1:length(colors)), y = seq(1:length(colors)),
      col = colors, pch=19, cex = 10)
+colors
 
 # Yellow range for background
 yellow <- rgb(maxColorValue = 255, 252, 182, 67) # Geel
@@ -37,3 +38,4 @@ ramp <- colorRamp(colors = c(yellow, 'white' ))
 colors <- rgb( ramp(seq(0, 1, length = 10)), max = 255)
 plot(x = seq(1:length(colors)), y = seq(1:length(colors)),
      col = colors, pch=19, cex = 10)
+colors

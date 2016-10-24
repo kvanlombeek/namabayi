@@ -1,9 +1,9 @@
-
 /* Play with colors and fonts*/
 /* -------------------------*/
 body{
   background-color:#FEEED5;
   color:#1C4977;
+  font-size:1.6em;
 }
 .form-control {
   background-color: #FEF6EA;
@@ -28,28 +28,25 @@ p, div{
 }
 .btn-default,.btn-default:hover,.btn-default:active {
   color:#1C4977;
-  background-color: #FDCE81;
+  background-color: #FCBE57;
   border-color: #557799;
 }
 .btn-default:focus{
   outline: 0px auto -webkit-focus-ring-color;  
 }
-
+.internal_link{
+  border-bottom: 0.2em solid #22B3C8;
+}
 
 /* Change sex buttons */
 /*--------------------*/
-.sex_button{
-  width:100%;
-  height:100%;
-  text-align:center;
-/*  background-color: red;*/
-}
 .k_btn {
     display: inline-block;
     padding: 6px 12px;
     margin-bottom: 0;
     font-size: 14px;
     font-weight: 400;
+    font-weight: bold;
     line-height: 1.42857143;
     text-align: center;
     white-space: nowrap;
@@ -62,31 +59,21 @@ p, div{
     -ms-user-select: none;
     user-select: none;
     background-image: none;
+    background-color: #FCBE57;
     border: 1px solid transparent;
     border-radius: 4px;
-}
-.k_btn-female {
-    font-weight: bold;
-    color: #1C4977;
-    background-color: #FDCE81;
-    border-color: #557799;
-}
-.k_btn-male {
-    font-weight: bold;
-    color: #1C4977;
-    background-color: #FDCE81;
     border-color: #557799;
 }
 
 /* navbar */
 /* -------------------------*/
 .navbar-default{
-    background-color: #FDCE81;
-    border-color: #FDCE81;
+    background-color: #FCBE57;
+    border-color: #FCBE57;
 }
 .navbar-default .navbar-toggle, .navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus{
   border-color: #557799;
-  background-color: #FDCE81;
+  background-color: #FCBE57;
 }
 .navbar-default .navbar-toggle .icon-bar{
   background-color: #557799;
@@ -128,8 +115,10 @@ p, div{
 .navbar-default .navbar-collapse{
   border-color: #557799;
 }
-
-
+.h1_title{
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
 @media (min-width: 1200px) {
   .container{
       max-width: 970px;
@@ -144,13 +133,6 @@ p, div{
 }
 .hide_icon{
   display:none;
-}
-
-
-.k_btn-warning {
-    color: #fff;
-    background-color: #f0ad4e;
-    border-color: #eea236;
 }
 .radio_label{
   font-weight:normal;
@@ -172,12 +154,12 @@ p, div{
     float: none;
 }
 .fa-star {
-    color: #F86544;
+    color: #FCBE57;
 /*          -webkit-text-stroke-width: 1px;
     -webkit-text-stroke-color: black;*/
 }
 .fa-star-half-o {
-    color: #F86544;
+    color: #FCBE57;
 /*          -webkit-text-stroke-width: 1px;
     -webkit-text-stroke-color: black;*/
 }
@@ -222,7 +204,4 @@ p, div{
     top: 50%;
     left: 50%;
     transform: translateX(-50%) translateY(-50%);
-}
-#landing_page{
-          
 }

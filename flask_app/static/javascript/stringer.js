@@ -59,15 +59,11 @@ function stringer_initialize(){
 							.text(function(d){
 								return d['value']['name']
 							})
-							.style("font-weight", function(d){
-								if(d['key']==active_pair_index){ return 'bold' }else{ return 'normal'}
+							.style("display", function(d){
+								if(d['key']==active_pair_index){ return 'block'}else{ return 'none'}
 							})
-							.style("font-size", function(d){
-								if(d['key']==active_pair_index){ return '120%' }else{ return '100%' }
-							})
-							.style("display","block")
 							.style("width","100%")
-							.attr("class", "text-center");
+							.attr("class", "h3 text-center");
 
 				vm._data['global_spinning_wheel'] = true
 			})				
@@ -77,36 +73,36 @@ function get_stringer_suggestion(how_many, initialise){
 	if(initialise) vm._data['global_spinning_wheel'] = false
 	await_return = true
 	$.get(
-          url='/get_stringer_suggestion',
-          data={
-            'user_ID':user_ID,
-            'session_ID':session_ID,
-            'requested_sex':vm._data['suggestion_sex']['female_selected'] ? 'F':'M',
-            'how_many':how_many
-            //'names_already_in_frontend':temp_comm_strings_in_frontend
-          },
-          callback=function(return_data){
+      url='/get_stringer_suggestion',
+      data={
+        'user_ID':user_ID,
+        'session_ID':session_ID,
+        'requested_sex':vm._data['suggestion_sex']['female_selected'] ? 'F':'M',
+        'how_many':how_many
+        //'names_already_in_frontend':temp_comm_strings_in_frontend
+      },
+      callback=function(return_data){
+      	console.log(return_data)
+  		max_key = parseInt(d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1])
 
-      		max_key = parseInt(d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1])
+  		for(var i=0;i<return_data['names'].length;i++){
+  			new_key = max_key+i+1
+  			sug_names_in_frontend[new_key] = {'name':return_data['names'][i]}
+  		} 		
 
-      		for(var i=0;i<return_data['names'].length;i++){
-      			new_key = max_key+i+1
-      			sug_names_in_frontend[new_key] = {'name':return_data['names'][i]}
-      		} 		
+  		// When the suggestion are returned, disable wait screen, update table
+  		switch_wait_screen('off') 
+  		update_d3_string_pairs_table()
 
-      		// When the suggestion are returned, disable wait screen, update table
-      		switch_wait_screen('off') 
-      		update_d3_string_pairs_table()
-
-      		// And call itself again if there is less than 10 names on the screen:
-      		if(10 - d3.keys(sug_names_in_frontend).length > 0){
-      			get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
-      		}else{
-      			// Disable infinite loop until user voted again
-      			infinte_loop_enabled = false
-      		}
-          }
-        )
+  		// And call itself again if there is less than 10 names on the screen:
+  		if(10 - d3.keys(sug_names_in_frontend).length > 0){
+  			get_stringer_suggestion(10 - d3.keys(sug_names_in_frontend).length,false)
+  		}else{
+  			// Disable infinite loop until user voted again
+  			infinte_loop_enabled = false
+  		}
+      }
+    )
 }
 
 function return_vote(name, vote){
@@ -154,6 +150,7 @@ function actions_after_vote(vote){
     	if(sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['man_vote'] == null){
      		active_pair_index = d3.keys(sug_names_in_frontend)[i]
      		console.log( 'Active pair index: '+ active_pair_index)
+     		console.log(sug_names_in_frontend[active_pair_index])
      		pair_not_found = false
      	}
      	i++;
@@ -182,22 +179,21 @@ function update_d3_string_pairs_table(){
 	selection = d3.select("#div_sorting_strings").selectAll("span")
 					.data(d3.entries(sug_names_in_frontend), key);
 
+	selection.style("display", function(d){
+					if(d['key']==active_pair_index){ return 'block'}else{ return 'none'}
+				})
+
+
 	selection.enter()
 				.append('span')
 				.text(function(d){
 					return d['value']['name']
 				})
-				.style("display", "block")
+				.style("display", function(d){
+					if(d['key']==active_pair_index){ return 'block'}else{ return 'none'}
+				})
 				.style("width","100%")
-				.attr("class", "text-center");
-
-	selection.style("font-weight", function(d){
-					if(d['key']==active_pair_index){ return 'bold' }else{ return 'normal'}
-				})
-				.style("font-size", function(d){
-					if(d['key']==active_pair_index){ return '120%' }else{ return '100%' }
-				})
-				.style("display", "block")
+				.attr("class", "h3 text-center");
 
 	selection.exit()
 				.remove()
