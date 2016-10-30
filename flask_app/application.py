@@ -237,7 +237,6 @@ def get_stringer_suggestion():
 					AND sex = %(sex)s '''
 	params = {'user_id':user_ID, 'sex':requested_sex}
 	names_feedback = pd.read_sql_query(sql = query, con = sql_conn, params=params)
-	
 	n_liked_names = len(names_feedback.loc[names_feedback['feedback'] == 'like',:])
 	n_disliked_names = len(names_feedback.loc[names_feedback['feedback'] != 'like',:])
 	# how many names did he already lookup?
@@ -255,7 +254,6 @@ def get_stringer_suggestion():
 	lookup_names = [lookup_name for lookup_name in lookup_names if lookup_name != '']
 	n_lookup_names = len(lookup_names)
 
-	
 	# Normal random suggestion
 	if(((n_liked_names+n_lookup_names) < 2) | (n_disliked_names < 2) ):
 	#if(n_liked_names <6 ):
@@ -263,7 +261,7 @@ def get_stringer_suggestion():
 						FROM voornamen_pivot 
 						WHERE sex = %(sex)s
 						AND region = 'Belgie'
-						AND score_popular > 2
+						AND score_popular > 3
 						AND name NOT IN (
 							SELECT name 
 							FROM feedback
@@ -275,7 +273,6 @@ def get_stringer_suggestion():
 
 	# User liked already more than 10 names, train a model and get a scored suggestion
 	if((n_liked_names+n_lookup_names) >= 2 & (n_disliked_names > 2) ):
-		print('Hier1')
 		# Create learning matrix with likes and no likes
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		learning_matrix = pd.read_sql_query('''SELECT voornamen_pivot.*, feedback.feedback
@@ -287,7 +284,6 @@ def get_stringer_suggestion():
 							                	AND feedback.sex = %(requested_sex)s;''', 
 							                	con = sql_conn, params=params)
 		# Apend learning matrix with lookup names
-		print('Hier2')
 		if(len(lookup_names)>0):
 			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
 			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
@@ -300,14 +296,13 @@ def get_stringer_suggestion():
 			learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
 			learning_matrix = learning_matrix.drop_duplicates('name', )
 
-		print('Hier3')
 		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
 		learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
+		print(learning_matrix[['name', 'feedback', 'sex']])
 		learning_matrix = drop_unwanted_columns(learning_matrix)
 		learning_matrix = drop_columns_with_no_variation(learning_matrix)
 		learning_matrix = keep_only_interesting_origins(learning_matrix,5)
 		learning_matrix = drop_equal_columns(learning_matrix)
-		print('Hier4')
 		# Train
 		features_and_types = {}
 		for feature in learning_matrix.columns:
@@ -318,7 +313,6 @@ def get_stringer_suggestion():
 		model = Naive_bayes_model()
 		model.train(learning_matrix, features_and_types, 'feedback')
 		learning_matrix['odds_ratio'] = model.predict(learning_matrix)
-		print('Hier5')
 		# Make a suggestion
 		params = {'user_id':user_ID, 'requested_sex':requested_sex}
 		test_sample = pd.read_sql_query('''SELECT * FROM voornamen_pivot
@@ -334,23 +328,30 @@ def get_stringer_suggestion():
 		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
 		test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		test_sample['odds_ratio'] = model.predict(test_sample)
-		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False).loc[:20,].sample(how_many)
+		# Do some other kind of prior calculation
+		#test_sample['odds_ratio'] = test_sample['odds_ratio'] * test_sample['minus18'] / np.sum(test_sample['minus18'])
+
+		# Export for debug
+		#test_sample_export = test_sample[['name','odds_ratio', 'minus18']].copy()
+		#test_sample_export['name'] = test_sample_export['name'].str.encode('utf-8')
+		#test_sample_export.to_csv('odds.csv', index=False)
+		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False).iloc[:20,].sample(how_many)
 		suggestion = test_sample['name'].tolist()
-		print('Hier6')
 		return jsonify(names = suggestion, sex = requested_sex)
 
 @application.route('/get_stats', methods=['GET'])
 def get_stats():
 	
 	# Request name info
-	name_1 = request.args.get('name_1').strip().title()
+	name_1 = request.args.get('name_1').encode('utf-8').strip()
+	name_1 = name_1[0].upper() + name_1[1:] 
 	name_2 = ''
-	sex_name_1 = request.args.get('sex_name_1')
+	sex_name_1 = ''
 	sex_name_2 = request.args.get('sex_name_2')
-	region = request.args.get('region')
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
-	from_landing_page = sex_name_1==''
+	from_landing_page = request.args.get('from_landing_page')
+	print('User request: name 1: %s of sex %s , from landing page : %s' %(name_1, sex_name_1, str(from_landing_page)))
 
 	# Store away Lookup info
 	lookup_info = {'session_id':session_ID,
@@ -358,7 +359,6 @@ def get_stats():
 					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
 					'name_1': name_1,
 					'name_2': name_2,
-					'region':region,
 					'sex_name_1':sex_name_1,
 					'sex_name_2':sex_name_2,
 					'from_landing_page' :from_landing_page}
@@ -368,26 +368,25 @@ def get_stats():
 	query = '''SELECT *
 				FROM voornamen_pivot 
 				WHERE name = %(name)s
-				AND region = %(region)s
-				LIMIT 1'''
-	params = {'name':name_1,'region':region}
-	try: 
-		name_1_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
-		# If sex first name is undefined,user did not pick sex or comes from landing page,
-		# query both sexes and pick the sex where the name is the most popular
-		if(sex_name_1 == ''):
-			name_1_kpis = name_1_kpis.loc[name_1_kpis['all_ages'] == np.max(name_1_kpis['all_ages']),:].loc[0,:]
-			name_1_kpis = name_1_kpis
-			sex_name_1 = name_1_kpis['sex']
-		else:
-			name_1_kpis = name_1_kpis.loc[0,:]
+				AND region = 'Vlaanderen' '''
+
+	params = {'name':name_1}
+	name_1_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
+	# Check that the name was in the database. If not, return all zeros
+	if(len(name_1_kpis) == 0):
+		print('No names found')
+		name_1_kpis = pd.Series({'score_original':5.0,'score_vintage':0.0,'score_classic':0.0,'score_trend':0.0,'score_popular':0.0})
+		sex_name_1 = 'M'
+		name_1_ts = np.repeat(0, 20)
+		name_1_meaning = 'Unknown'		
+	# Else, set return values
+	else:
+			
+		name_1_kpis = name_1_kpis.loc[name_1_kpis['all_ages'] == np.max(name_1_kpis['all_ages']),:].loc[0,:]
+		sex_name_1 = name_1_kpis['sex']
 		name_1_ts = name_1_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
 		name_1_meaning = name_1_kpis['meaning']
-	except:
-		name_1_kpis = pd.Series({'score_original':5.0,'score_vintage':0.0,'score_classic':0.0,'score_trend':0.0,'score_popular':0.0})
-		name_1_ts = np.repeat(0, 20)
-		name_1_meaning = 'Unknown'
-	
+
 	# Query name 2, if name is undefined (might be coming from landing page), select a name that is close the first name
 	if(name_2 == ''):
 		query = '''	SELECT *, public.levenshtein(%(name)s, name) as distance
@@ -399,11 +398,17 @@ def get_stats():
 					LIMIT 2;'''
 		params = {'name':str(name_1), 'sex':sex_name_1}
 		name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
-		name_2_kpis = name_2_kpis.loc[np.random.randint(2),:]
-		name_2 = name_2_kpis['name']
-		name_2_ts = name_2_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
-		name_2_meaning = name_2_kpis['meaning']
-		sex_name_2 = name_1_kpis['sex']
+		if(len(name_2_kpis)==0):
+			name_2 = None
+			name_2_kpis = pd.Series({'score_original':5.0,'score_vintage':0.0,'score_classic':0.0,'score_trend':0.0,'score_popular':0.0})
+			name_2_ts = np.repeat(0, 20)
+			name_2_meaning = 'Unknown'
+		else:
+			name_2_kpis = name_2_kpis.loc[np.random.randint(2),:]
+			name_2 = name_2_kpis['name']
+			name_2_ts = name_2_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
+			name_2_meaning = ''
+			sex_name_2 = sex_name_1
 	# Query the second name in the normal way as it is defined by the user
 	else:
 		query = '''SELECT *

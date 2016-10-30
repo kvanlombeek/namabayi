@@ -11,7 +11,7 @@ function draw_timeseries(timeseries, name_1, name_2){
     //console.log(timeseries['name_2'])
     $('#timeseries_graph').highcharts({
         chart: {
-            backgroundColor:'#FEEED5',
+            backgroundColor:'transparent',
             style: {
                 fontFamily: "'Josefin Sans', sans-serif",
                 color: "#1C4977"
@@ -33,12 +33,21 @@ function draw_timeseries(timeseries, name_1, name_2){
                 style: {
                     color: "#1C4977",
                     font: "'Josefin Sans', sans-serif",
+                    fontSize:"1.2em"
                 }
             },
         },
         yAxis: {
             title: {
-                text: '# per 10000'
+                text: '# per 10000',
+                style: {
+                    color: "#1C4977",
+                    font: "'Josefin Sans', sans-serif",
+                    fontSize:"1.2em"
+                },
+                // align:"high",
+                // rotation:0,
+                // margin:0px
             },
             plotLines: [{
                 value: 0,
@@ -52,6 +61,7 @@ function draw_timeseries(timeseries, name_1, name_2){
                 style: {
                     color: "#1C4977",
                     font: "'Josefin Sans', sans-serif",
+                    fontSize:"1.2em"
                 }
             },
         },
@@ -63,7 +73,13 @@ function draw_timeseries(timeseries, name_1, name_2){
             align: 'center',
             verticalAlign: 'bottom',
             borderWidth: 0,
-            floating: false
+            floating: false,
+            itemStyle:{
+                font: "'Josefin Sans', sans-serif",
+                fontSize:"1.8em",
+                fontWeight:1
+            }
+
         },
         series: [{
             name: name_1,

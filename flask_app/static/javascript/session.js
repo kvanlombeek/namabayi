@@ -3,14 +3,14 @@ create_session_info()
 
 function create_session_info(){
     // First check if user ID was created before, and is stored in a cookie
-    // user_ID_from_cookie = find_cookie('user_ID')
-    // if(user_ID_from_cookie != ''){
-    //     set_user_ID(user_ID_from_cookie)
-    //     console.log('User id already found, pick up session ID:')
-    //     // User ID found in cookie, just create session ID in backend
-    //     set_session_ID(get_session_ID(user_ID))
-    //     return null
-    // }
+    user_ID_from_cookie = find_cookie('user_ID')
+    if(user_ID_from_cookie != ''){
+        set_user_ID(user_ID_from_cookie)
+        console.log('User id already found, pick up session ID:')
+        // User ID found in cookie, just create session ID in backend
+        set_session_ID(get_session_ID(user_ID))
+        return null
+    }
     // No user ID found in cookie, get a new one, and store in coockie. Session ID is also created in backend
     $.get(
         url='/request_user_ID',

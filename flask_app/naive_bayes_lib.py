@@ -54,11 +54,8 @@ class Naive_bayes_model:
         self.targets = np.unique(df[target])
         for feature, feature_type in features_dict.items():
             self.class_summaries[feature] = self.calculate_class_summary(df[[feature, target]], feature_type, target)
-        print('class summary:')
-        print(self.class_summaries)
         self.calculate_priors(df, target)
         self.len_training = len(df)
-        print('Len training : %i' %self.len_training)
         
     def calculate_priors(self, df, target):
         self.priors = dict(df[target].value_counts()/len(df))
@@ -108,7 +105,6 @@ class Naive_bayes_model:
                 for target in self.targets:
                     if(observation[feature]>0): probabilities[target] = self.class_summaries[feature][target]['True']
                     else: probabilities[target] = 1-self.class_summaries[feature][target]['True']
-            #print('feature : %s with probs: %s' %(feature, str(probabilities)))
             # Hier probleem, soms delen door 0
             teller = probabilities[self.targets[0]] + 1.0/self.len_training
             noemer = probabilities[self.targets[1]] + 1.0/self.len_training

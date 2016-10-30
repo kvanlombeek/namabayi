@@ -7,11 +7,14 @@
     <meta name="description" content="Met NamaBayi [BabyNaam] was naar een babynaam zoeken nog nooit zo leuk">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-
     <script src="https://use.fontawesome.com/2cfb7e51c3.js"></script>
+
+
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="css/custom_css.css">
     <link href="https://fonts.googleapis.com/css?family=Josefin+Sans:300i,400,400i,600,700" rel="stylesheet">
+
+
 
     <meta name="theme-color" content="#ffffff">
 
@@ -65,11 +68,11 @@
           <div class='row'>
             <div class="col-xs-8">
               <div class="form-group">  
-                  <input class="form-control" id="name_1" placeholder="Enter name" v-model="name_1">
+                  <input class="form-control"  placeholder="Enter name" v-model="lookup_input['prim_name']['name']">
               </div>
             </div>
             <div class="col-xs-4">
-              <button v-on:click="submit_names_landing_page" class="btn btn-default"><!-- <i class="fa fa-search" aria-hidden="true"></i>  -->Zoek!</button><br>
+              <button v-on:click="submit_names('landing_page')" class="btn btn-default"><!-- <i class="fa fa-search" aria-hidden="true"></i>  -->Zoek!</button><br>
             </div>
           </div>
           <p style='visibility: hidden;'>.</p>
@@ -104,15 +107,14 @@
       <div class="row">    
           <div class="col-xs-6 col-sm-4">
             <div class="form-group">  
-              <input class="form-control" id="name_1" placeholder="Naam" v-model="name_1">
+              <input class="form-control" placeholder="Naam" v-model="lookup_input['prim_name']['name']">
             </div>
           </div>
-          <div class="col-xs-2 col-sm-2">
-            <div class='k_btn' v-html="lookup_sex_selection['prim_name']['icon']" v-on:click="lookup_prim_change_sex"></div>
-          </div>
-          <!-- Submit button -->
-          <div class="col-xs-4 col-sm-4">
-            <button v-on:click="submit_names" class="btn btn-default"><!-- <i class="fa fa-search" aria-hidden="true"></i> --> Zoek!</button><br>
+          <div class="col-xs-6 col-sm-4 text-right">
+<!--             <button class="btn btn-default" v-bind:class="{'not_selected':lookup_output.prim_name.female_selected}"><i class="fa fa-mars" aria-hidden="true"></i></button>
+            <button class="btn btn-default" v-bind:class="{'not_selected':lookup_output.prim_name.male_selected}"><i class="fa fa-venus" aria-hidden="true"></i></button> -->
+            <span style="padding-left:10px"><button v-on:click="submit_names('search_page')" class="btn btn-default"><!-- <i class="fa fa-search" aria-hidden="true"></i> --> Zoek!</button><span>
+            <br>
           </div>
       </div>
       <div v-show="more_than_5_lookups" class="row">    
@@ -120,13 +122,7 @@
             <p>Doe inspiratie op met de persoonlijke <span class="internal_link" v-on:click="activate_page('suggest')">suggesties.</span></p>
           </div>
       </div>
-
-<!--        <div id="header" class="row">    
-            <div class="col-xs-6 col-sm-4">
-               <button class="btn btn-primary raised"><i class="fa fa-search" aria-hidden="true"></i></button>
-              <button class="btn btn-primary raised"><i class="fa fa-venus" aria-hidden="true"></i></button>
-              </div> 
-        </div> -->
+    </div>
 <!--         <div id="header" class="row"> 
           <div class="col-xs-6 col-sm-6">
             <div class="form-group">
@@ -141,9 +137,9 @@
             </span>
           </div>
         </div> -->
-      </div>
-      <div class="row" style="display:none">
-        <!-- region sex buttons -->
+      
+      <!-- region sex buttons -->
+<!--       <div class="row" style="display:none">
         <div class="col-xs-3">
           <label>Regio</label><br>
         </div>
@@ -165,7 +161,7 @@
             <label class="radio_label" for="radio_wallonie">Wallonië</label>
           </div>
         </div>
-    </div>
+    </div> -->
       <!-- Results section -->
       <!-- *************** -->
     <div class="container" v-bind:class="{'hide':stats_div}">
@@ -177,9 +173,17 @@
     </div>
     <div class="container" id="lookup_stats_results" v-bind:class="{'hide':stats_div}">
       <div class="row">
-        <div class="col-xs-12 h1_title"><span class='h1'>{{name_1}} </span>
-        <span class='h3'>(<i class="fa fa-venus" v-bind:class="{'hide_icon':lookup_sex_selection['prim_name']['male_selected']}" aria-hidden="true"></i><i class="fa fa-mars" v-bind:class="{'hide_icon':lookup_sex_selection['prim_name']['female_selected']}" aria-hidden="true"></i>)</span>
-        <span class='h1'> is: </span></div>
+        <div class="col-xs-9 h1_title">
+            <span class='h1'>{{lookup_output['prim_name']['name']}}</span><span class='h1'> is </span>
+        </div>
+        <div class="col-xs-3 col-sm-2 text-right h1_title">
+            <!-- <div id='lookup_change_sex_button' class='k_btn' v-html="lookup_input['prim_name']['icon']" v-on:click="lookup_prim_change_sex"> -->
+            <span>
+              <i class="fa fa-venus fa-2x" v-bind:class="{'hide_icon':lookup_output.prim_name.male_selected}" aria-hidden="true"></i>
+              <i class="fa fa-mars fa-2x" v-bind:class="{'hide_icon':lookup_output.prim_name.female_selected}" aria-hidden="true"></i>
+            </span>    
+        </div>
+      </div>
         <!-- Table header -->
 <!--         <div class="col-xs-4">
         </div>
@@ -193,16 +197,16 @@
           <i class="fa fa-venus" v-bind:class="{'hide_icon':lookup_sex_selection['ref_name']['male_selected']}" aria-hidden="true"></i>
           <i class="fa fa-mars" v-bind:class="{'hide_icon':lookup_sex_selection['ref_name']['female_selected']}" aria-hidden="true"></i>
         </div> -->
-      </div>
+
         <!-- Score origal -->
         <!-- ************ -->
       <div class="row">  
-        <div class="col-xs-6 text-right">
-          Origineel:
+        <div class="col-xs-5 text-right">
+          Origineel
         </div>
 
         <!-- Name 1 -->
-        <div class="col-xs-6 stars  text-left">
+        <div class="col-xs-7 stars  text-left">
           <span class="fa" v-bind:class="{'fa-star star_filled':score_original['name_1'][1]['full'],
                                           'fa-star-half-o':score_original['name_1'][1]['half_empty'],
                                           'fa-star-o':score_original['name_1'][1]['empty']}"></span>
@@ -235,11 +239,11 @@
         <!-- Score popular -->
         <!-- ************* -->
       <div class="row">  
-        <div class="col-xs-6 text-right">
-          Populair:
+        <div class="col-xs-5 text-right">
+          Populair
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-6 stars text-left">
+        <div class="col-xs-7 stars text-left">
           <span class="fa" v-bind:class="{'fa-star star_filled':score_popular['name_1'][1]['full'],
                                           'fa-star-half-o':score_popular['name_1'][1]['half_empty'],
                                           'fa-star-o':score_popular['name_1'][1]['empty']}"></span>
@@ -272,11 +276,11 @@
         <!-- Score classic -->
         <!-- ************* -->
       <div class="row">
-        <div class="col-xs-6 text-right">
-          Klassiek:
+        <div class="col-xs-5 text-right">
+          Tijdsloos
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-6 stars text-left">
+        <div class="col-xs-7 stars text-left">
           <span class="fa" v-bind:class="{'fa-star':score_classic['name_1'][1]['full'],
                                           'fa-star-half-o':score_classic['name_1'][1]['half_empty'],
                                           'fa-star-o':score_classic['name_1'][1]['empty']}"></span>
@@ -309,11 +313,11 @@
         <!-- Score vintage -->
         <!-- ************* -->
       <div class="row">
-        <div class="col-xs-6 text-right">
-          Vintage:
+        <div class="col-xs-5 text-right">
+          Vintage
         </div>
         <!-- Name 1 -->
-        <div class="col-xs-6 stars text-left">
+        <div class="col-xs-7 stars text-left">
           <span class="fa" v-bind:class="{'fa-star':score_vintage['name_1'][1]['full'],
                                           'fa-star-half-o':score_vintage['name_1'][1]['half_empty'],
                                           'fa-star-o':score_vintage['name_1'][1]['empty']}"></span>
@@ -344,10 +348,10 @@
       </div>
         <!-- Score trending -->
       <div class="row">  
-        <div class="col-xs-6 text-right">
-          Trending:
+        <div class="col-xs-5 text-right">
+          Trending
         </div>
-        <div class="col-xs-6 stars text-left">
+        <div class="col-xs-7 stars text-left">
           <span class="fa" v-bind:class="{'fa-star':score_trend['name_1'][1]['full'],
                                           'fa-star-half-o':score_trend['name_1'][1]['half_empty'],
                                           'fa-star-o':score_trend['name_1'][1]['empty']}"></span>
@@ -377,22 +381,22 @@
         </div> -->
       </div>
       <div class="row">  
-        <div class="col-xs-6 text-right">
-          Betekenis:
+        <div class="col-xs-5 text-right">
+          Betekenis
         </div>
-        <div class="col-xs-6 text-left">
-          {{name_1_meaning}}
+        <div class="col-xs-7 text-left">
+          {{lookup_output['prim_name']['meaning']}}
         </div>
 <!--         <div class="col-xs-4 text-center">
           {{name_2_meaning}}
         </div> -->
       </div> 
       <div class="row">  
-        <div class="col-xs-6 text-right">
-          Gelijkaardig:
+        <div class="col-xs-5 text-right">
+          Gelijkaardig
         </div>
-        <div class="col-xs-6 text-left">
-          {{name_1_gelijkaardig}}
+        <div class="col-xs-7 text-left">
+          {{lookup_output['prim_name']['gelijkaardig']}}
         </div>
 <!--         <div class="col-xs-4 text-center">
           {{name_2_meaning}}
@@ -435,11 +439,13 @@
 
     <div class="container" v-bind:class="{'hide':active_page['suggest']}">
         <div class="row" >
-          <div class="col-xs-6">
+          <div class="col-xs-7">
             <h1>Suggesties</h1>
             <br>
           </div>
-          <div class="col-xs-6 text-right">
+          <div class="col-xs-5 text-right">
+<!--             <h1><button class="btn btn-default" v-bind:class="{'not_selected':lookup_output.prim_name.female_selected}"><i class="fa fa-mars" aria-hidden="true"></i></button>
+            <button class="btn btn-default" v-bind:class="{'not_selected':lookup_output.prim_name.male_selected}"><i class="fa fa-venus" aria-hidden="true"></i></button></h1> -->
             <h1><div class='k_btn' v-html="suggestion_sex['icon']" v-on:click="suggestion_change_sex"></div></h1>
           </div>
         </div>
@@ -453,12 +459,13 @@
         <div class="row" >
           <div class="col-xs-1 text-center"></div>
           <div class="col-xs-2 text-center">
-            <h2 style="margin-top:15px"><i class="fa fa-thumbs-down" onclick="actions_after_vote('no_like')" aria-hidden="true"></i></h2>
+            <h2 style="margin-top:15px"><i class="fa fa-thumbs-down" v-on:click="stringder_actions_after_feedback('no_like')" aria-hidden="true"></i></h2>
           </div>
-          <div class="col-xs-6" id="div_sorting_strings" style="position:relative" >
+          <div class="col-xs-6 text-center" id="div_sorting_strings" style="position:relative" >
+            <h3>{{suggested_names_in_frontend[0]}}</h3>
           </div>
           <div class="col-xs-2 text-center">
-            <h2  style="margin-top:15px"><i class="fa fa-thumbs-up" onclick="actions_after_vote('like')" aria-hidden="true"></i></h2>
+            <h2  style="margin-top:15px"><i class="fa fa-thumbs-up" v-on:click="stringder_actions_after_feedback('like')" aria-hidden="true"></i></h2>
          </div>
          <div class="col-xs-1 text-center"></div>
         </div>
@@ -504,13 +511,6 @@
           <h1><div class='k_btn' v-html="selection_liked_names['icon']" v-on:click="liked_names_change_sex"></div></h1>
         </div>
       </div>
-      <div class="row" >
-          <div class="col-xs-12">
-            <br>
-            <p>Bewaar je namen door een <span class='internal_link' v-on:click="activate_page('login')">account </span>aan de maken.</p>
-          </div>
-      </div>
-
       <div class="row">
         <div class="col-xs-12">
           <table style="font-size:120%">
@@ -536,6 +536,12 @@
         <div class="col-xs-4">
               <button v-on:click="add_name" class="btn btn-default">Add</button>
         </div>
+      </div>
+      <div class="row" >
+          <div class="col-xs-12">
+            <br>
+            <p>Bewaar je namen door een <span class='internal_link' v-on:click="activate_page('login')">account</span> aan de maken.</p>
+          </div>
       </div>
       <div class="row"> 
         <div class="col-xs-12">
@@ -626,22 +632,20 @@
 
     <!-- jQuery.js -->
     <script src="javascript/jquery.js"></script>
-    
+
     <!-- bootstrap javascript -->
     <script src="javascript/bootstrap.js"></script>
 
     <!-- Highstocks.js -->
     <script src="javascript/highstock.js"></script>
-    <!-- d3.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.3/d3.js"></script>
-
 
     <!-- Own javascript -->
     <script src="javascript/timeseries_graph.js"></script>  
-    <script src="javascript/session.js"></script>  
-    <script src="javascript/main.js"></script>  
-    <script src="javascript/stringer.js"></script>  
+    <script src="javascript/session.js"></script>
+    <script>console.log("Before loading main.js"</script>
 
+    <script src="javascript/main.js"></script>  
+    <script>console.log("After loading main.js"</script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -652,9 +656,6 @@
       ga('send', 'pageview');
 
     </script>
-
-
-
 
   </body>
 </html>

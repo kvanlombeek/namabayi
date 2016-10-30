@@ -1,12 +1,18 @@
 /* Play with colors and fonts*/
 /* -------------------------*/
 body{
-  background-color:#FEEED5;
-  color:#1C4977;
+  background-color:rgba(255, 204, 0,0.1);
+  color:#386088;
   font-size:1.6em;
 }
+.hide_icon{
+  display:none;
+}
+/*.fa-2x{
+  font-size:1.6em;
+}*/
 .form-control {
-  background-color: #FEF6EA;
+  background-color: rgba(255, 204, 0,0.1);
   color:#1C4977;
 }
 input .form-control{
@@ -19,20 +25,29 @@ input .form-control{
   -webkit-box-shadow:None;
   box-shadow:None;
 }
-h1{
-  color:#003366;
+h1, .h1{
+  color:#386088;
   font-family: 'Josefin Sans', sans-serif;
 }
 p, div{
   font-family: 'Josefin Sans', sans-serif;
 }
-.btn-default,.btn-default:hover,.btn-default:active {
+.btn-default,.btn-default:hover{
+  /*font-size:1em;*/
   color:#1C4977;
-  background-color: #FCBE57;
+  background-color: rgba(255, 204, 0,0.75);
+  border-color: #557799;
+}
+.btn-default:active,.btn-default:active:hover{
+  color:#1C4977;
+  background-color: rgba(255, 204, 0,0.5);
   border-color: #557799;
 }
 .btn-default:focus{
   outline: 0px auto -webkit-focus-ring-color;  
+}
+.not_selected{
+  background-color: rgba(255, 204, 0,0.1);
 }
 .internal_link{
   border-bottom: 0.2em solid #22B3C8;
@@ -59,21 +74,26 @@ p, div{
     -ms-user-select: none;
     user-select: none;
     background-image: none;
-    background-color: #FCBE57;
+    background-color: rgba(255, 204, 0,0.75);
     border: 1px solid transparent;
     border-radius: 4px;
     border-color: #557799;
+}
+#lookup_change_sex_button{
+  margin-top:20px;
+  margin-bottom:20px;
+
 }
 
 /* navbar */
 /* -------------------------*/
 .navbar-default{
-    background-color: #FCBE57;
-    border-color: #FCBE57;
+    background-color: rgba(255, 204, 0,0.75);
+    border-color: rgba(255, 204, 0,0.75);
 }
 .navbar-default .navbar-toggle, .navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus{
   border-color: #557799;
-  background-color: #FCBE57;
+  background-color: rgba(255, 204, 0,0.75);
 }
 .navbar-default .navbar-toggle .icon-bar{
   background-color: #557799;
@@ -131,9 +151,10 @@ p, div{
   border-left-width:0;
   border-right-width:0;
 }
-.hide_icon{
+/* Hide highcarts brand */
+/*text{
   display:none;
-}
+}*/
 .radio_label{
   font-weight:normal;
 }
@@ -154,15 +175,15 @@ p, div{
     float: none;
 }
 .fa-star {
-    color: #FCBE57;
-/*          -webkit-text-stroke-width: 1px;
-    -webkit-text-stroke-color: black;*/
+    color: #386088;
 }
 .fa-star-half-o {
-    color: #FCBE57;
-/*          -webkit-text-stroke-width: 1px;
-    -webkit-text-stroke-color: black;*/
+    color: #386088;
 }
+.fa-star-o {
+    color: #386088;
+}
+
 
 /*      .stars{
   padding:0px;
@@ -197,7 +218,7 @@ p, div{
     bottom:0;
     /*height:100%;
     width:100%;*/
-    background-color:rgba(0,0,0,0.1);
+    background-color:rgba(255, 204, 0,0.75)a(255, 204, 0,1)a(0,0,0,0.1);
 }
 #spinning_wheel .spinner {
     position: absolute;

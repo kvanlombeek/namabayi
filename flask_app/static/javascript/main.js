@@ -1,10 +1,19 @@
 
+console.log('Inside main.js')
+
 var session_ID;
 var user_ID;
 var test_event
 vm = new Vue({
   el: '#app',
   data: {
+    suggested_names_in_frontend:[],
+    suggestion_requesting_strings: false, 
+    suggestion_sex:{
+      male_selected:false,
+      female_selected:true,
+      icon:"<i class='fa fa-venus fa-lg' aria-hidden='true'>"
+    },
     counter_lookups:0,
     more_than_5_lookups:false,
     active_page:{
@@ -18,29 +27,20 @@ vm = new Vue({
     global_spinning_wheel:true,
     stats_div:true,
   	landing_page_name:'',
-    name_1: '',
-  	name_2: '',
-    name_1_meaning:'',
-    name_2_meaning:'',
-    name_1_gelijkaardig:'',
   	suggestion_request_sex:'',
   	region:'',
     returned_suggestion:{
       'name':'',
       'sex':''
     },
-    suggestion_sex:{
-      male_selected:false,
-      female_selected:true,
-      icon:"<i class='fa fa-venus' aria-hidden='true'>"
-    },
     selection_liked_names:{
       male_selected:false,
       female_selected:true,
-      icon:"<i class='fa fa-venus' aria-hidden='true'>"
+      icon:"<i class='fa fa-venus fa-lg' aria-hidden='true'>"
     },
-    lookup_sex_selection:{
+    lookup_input:{
       prim_name:{
+        name:'',
         male_selected:false,
         female_selected:true,
         icon: "<i class='fa fa-venus' aria-hidden='true'>"
@@ -50,6 +50,16 @@ vm = new Vue({
         female_selected:true,
         icon: "<i class='fa fa-venus' aria-hidden='true'>"
       },
+    },
+    lookup_output:{
+      prim_name:{
+        name:'',
+        sex:'',
+        meaning:'',
+        gelijkaardig:'',
+        female_selected:true,
+        male_selected:false
+      }
     },
     name_to_add:'',
     name_to_add_sex:'',
@@ -218,6 +228,67 @@ vm = new Vue({
     }
   },
   methods: {
+    stringder_initialize(){ 
+      this.global_spinning_wheel=false
+      this.stringer_request_names(5, initialize = true)   
+    },
+    stringder_actions_after_feedback(feedback){
+      // Return feedback
+      this.stringder_return_vote(this.suggested_names_in_frontend[0], feedback)
+      // Drop the name
+      this.suggested_names_in_frontend.shift()
+      // If there are no strings on front end anymore, activate spinning wheel
+      if(this.suggested_names_in_frontend.length == 0) this.global_spinning_wheel=false
+      // Request new names
+      if(this.suggestion_requesting_strings === false){
+        this.suggestion_requesting_strings = true
+        this.stringer_request_names()  
+      }
+    },
+    stringer_request_names(initialize = false){
+      
+      // How many to request? If initialize, 10. Else, 10 minus the length of the names already on frontend
+      how_many_to_request = initialize===false ? (5 - this.suggested_names_in_frontend.length) :  5   
+      if(how_many_to_request == 0 ){
+        this.suggestion_requesting_strings = false 
+        return null
+      }       
+      pass_this = this
+      $.get(
+       url='/get_stringer_suggestion',
+       data={
+         'user_ID':user_ID,
+         'session_ID':session_ID,
+         'requested_sex':pass_this.suggestion_sex['female_selected'] ? 'F':'M',
+         'how_many':how_many_to_request
+         //'names_already_in_frontend':temp_comm_strings_in_frontend
+       },
+       callback=function(return_data){          
+          if(initialize){
+            pass_this.suggested_names_in_frontend = return_data['names']
+          }else{
+            pass_this.suggested_names_in_frontend = pass_this.suggested_names_in_frontend.concat(return_data['names'])
+            pass_this.stringer_request_names()
+          } 
+          pass_this.global_spinning_wheel=true
+       }
+      ) 
+    },
+    stringder_return_vote(name, vote){
+      pass_this = this
+      $.get({
+          url: '/return_vote',
+          dataType:'json',
+          data: {'user_ID':user_ID,
+                  'session_ID':session_ID,
+                  'feedback':vote,
+                  'name':name,
+                  'sex':pass_this['suggestion_sex']['female_selected'] ? 'F':'M'},
+          success:function(){
+            return null
+          }
+      });
+    },
     create_login:function(){
       console.log(this.user_create_login['email'])
       console.log(this.user_create_login['password'])
@@ -241,36 +312,37 @@ vm = new Vue({
       if(this.suggestion_sex['male_selected']){
         this.suggestion_sex['male_selected'] = false
         this.suggestion_sex['female_selected'] = true
-        this.suggestion_sex['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
+        this.suggestion_sex['icon'] = "<i class='fa fa-venus fa-lg' aria-hidden='true'>"
       }else{
         this.suggestion_sex['male_selected'] = true
         this.suggestion_sex['female_selected'] = false        
-        this.suggestion_sex['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"
+        this.suggestion_sex['icon'] = "<i class='fa fa-mars fa-lg' aria-hidden='true'>"
       }
-      stringer_initialize();
+      this.stringder_initialize();
     },
     liked_names_change_sex:function(){
       if(this.selection_liked_names['male_selected']){
         this.selection_liked_names['male_selected']=false
         this.selection_liked_names['female_selected']=true
-        this.selection_liked_names['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
+        this.selection_liked_names['icon'] = "<i class='fa fa-venus fa-lg' aria-hidden='true'>"
       }else{
         this.selection_liked_names['male_selected']=true
         this.selection_liked_names['female_selected']=false
-        this.selection_liked_names['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"
+        this.selection_liked_names['icon'] = "<i class='fa fa-mars fa-lg' aria-hidden='true'>"
       }
       this.display_liked_names()
     },
     lookup_prim_change_sex: function(){
-      if(this.lookup_sex_selection['prim_name']['male_selected']){
-        this.lookup_sex_selection['prim_name']['male_selected'] = false
-        this.lookup_sex_selection['prim_name']['female_selected'] = true
-        this.lookup_sex_selection['prim_name']['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
+      if(this.lookup_input['prim_name']['male_selected']){
+        this.lookup_input['prim_name']['male_selected'] = false
+        this.lookup_input['prim_name']['female_selected'] = true
+        this.lookup_input['prim_name']['icon'] = "<i class='fa fa-venus' aria-hidden='true'>"
       }else{
-        this.lookup_sex_selection['prim_name']['male_selected'] = true
-        this.lookup_sex_selection['prim_name']['female_selected'] = false        
-        this.lookup_sex_selection['prim_name']['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"
+        this.lookup_input['prim_name']['male_selected'] = true
+        this.lookup_input['prim_name']['female_selected'] = false        
+        this.lookup_input['prim_name']['icon'] = "<i class='fa fa-mars' aria-hidden='true'>"
       }
+      if(this.lookup_input['prim_name']['name'] != '') this.submit_names()
     },
     lookup_ref_change_sex: function(){
       if(this.lookup_sex_selection['ref_name']['male_selected']){
@@ -291,7 +363,7 @@ vm = new Vue({
         else this.active_page[page]=true 
       }
       //if(which_one=='suggest') this.get_suggestion()
-      if(which_one=='suggest') stringer_initialize()
+      if(which_one=='suggest') this.stringder_initialize()
       if(which_one=='list') this.request_liked_names()
       // Anoying method to close the navbar
       $('.navbar-collapse.collapse').collapse('hide')
@@ -311,31 +383,29 @@ vm = new Vue({
         this[star_array_clicked[0]][star_array_clicked[1]][star_array_clicked[2]][i+1]['empty']=true
       }
     },
-    get_suggestion:function(feedback){
-      var pass_this = this
-      this.spinning_wheel_suggestions = false
-      $.get(
-        url='/get_suggestion',
-        data={
-          'user_ID':user_ID,
-          'session_ID':session_ID,
-          'suggestion_scores':JSON.stringify(pass_this.computed_suggest_score_ints),
-          'requested_sex':pass_this.suggestion_request_sex,
-          'previous_suggestion':pass_this.returned_suggestion['name'],
-          'previous_suggestion_sex':pass_this.returned_suggestion['sex'],
-          'feedback':feedback ? feedback : 'suggestion_initialisation',
-          'how_many':10
-          //'names_alread_on_frontend':
-        },
-        callback=function(return_data){
-          console.log('Hier')
-          console.log(return_data)
-          pass_this.returned_suggestion['name'] = return_data['name']
-          pass_this.returned_suggestion['sex'] = return_data['sex']
-          pass_this.spinning_wheel_suggestions = true
-        }
-      )
-    },
+    // get_suggestion:function(feedback){
+    //   var pass_this = this
+    //   this.spinning_wheel_suggestions = false
+    //   $.get(
+    //     url='/get_suggestion',
+    //     data={
+    //       'user_ID':user_ID,
+    //       'session_ID':session_ID,
+    //       'suggestion_scores':JSON.stringify(pass_this.computed_suggest_score_ints),
+    //       'requested_sex':pass_this.suggestion_request_sex,
+    //       'previous_suggestion':pass_this.returned_suggestion['name'],
+    //       'previous_suggestion_sex':pass_this.returned_suggestion['sex'],
+    //       'feedback':feedback ? feedback : 'suggestion_initialisation',
+    //       'how_many':10
+    //       //'names_alread_on_frontend':
+    //     },
+    //     callback=function(return_data){
+    //       pass_this.returned_suggestion['name'] = return_data['name']
+    //       pass_this.returned_suggestion['sex'] = return_data['sex']
+    //       pass_this.spinning_wheel_suggestions = true
+    //     }
+    //   )
+    // },
     delete_listed_name:function(name_to_delete, rank){
       this.global_spinning_wheel=false      
       pass_this = this
@@ -454,128 +524,78 @@ vm = new Vue({
             pass_this.display_liked_names()
           })
     },      
-    submit_names: function () {
-		  var pass_this = this
+    submit_names: function(from_which_page) {
+      console.log(from_which_page)
+      // If no name is filled in, return null. TODO show warning
+      if(this.lookup_input['prim_name']['name'] == '') return null
+      // Capitalize first letter
+      this.lookup_input['prim_name']['name'] = capitalizeFirstLetter(this.lookup_input['prim_name']['name'])
+		  // If the user comes from the landing page, activate the lookup page
+      if(from_which_page == 'landing_page') this.activate_page('lookup')
+      // Activate the spinning wheel
       this.global_spinning_wheel=false
-      	$.get(
-      		url='/get_stats',
-      		data={
-      			'name_1':this.name_1,
-            'name_2':this.name_2,
-            'sex_name_1':(this.lookup_sex_selection['prim_name']['male_selected'] ? "M" : "F"),
-            'sex_name_2':(this.lookup_sex_selection['ref_name']['male_selected'] ? "M" : "F"),
-      			'region':this.region,
-      			'user_ID':user_ID,
-      			'session_ID':session_ID
-      		},
-      		callback=function(return_data){
-            pass_this.stats_div = false
-      			// Set stars
-            score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']
-            name_numbers = ['name_1','name_2']
-      			for(i=0; i<score_names.length;i++ ){
-      				score_name = score_names[i]
-      				for(j=0; j<name_numbers.length; j++){
-                name_number = name_numbers[j]
-                for(k=0; k<4; k++ ){
-		      				pass_this[score_name][name_number][k+1]['full'] = false
-		      				pass_this[score_name][name_number][k+1]['half_empty'] = false
-		      				pass_this[score_name][name_number][k+1]['empty'] = false
-		      				if(k + 1 - return_data[score_name][name_number]<0.5){
-		      					pass_this[score_name][name_number][k+1]['full'] = true
-		      				}else if(k + 1 - return_data[score_name][name_number] < 1){
-		      					pass_this[score_name][name_number][k+1]['half_empty'] = true
-		      				}else{
-		      					pass_this[score_name][name_number][k+1]['empty'] = true
-		      				}
-		      			}
-		      		}
-      			}
-            pass_this.name_1_meaning = return_data['meanings']['name_1']
-            pass_this.name_2_meaning = return_data['meanings']['name_2']
-            pass_this.lookup_sex_selection.prim_name['female_selected'] = return_data['sexes']['name_1'] == 'F' ? true : false
-            pass_this.lookup_sex_selection.prim_name['male_selected'] = return_data['sexes']['name_1'] == 'M' ? true : false
-            pass_this.lookup_sex_selection.ref_name['female_selected'] = return_data['sexes']['name_2'] == 'F' ? true : false
-            pass_this.lookup_sex_selection.ref_name['male_selected'] = return_data['sexes']['name_2'] == 'M' ? true : false
-            pass_this.lookup_sex_selection['ref_name']['icon'] = return_data['sexes']['name_2'] == 'M' ? 
-                           "<i class='fa fa-mars' aria-hidden='true'>" : "<i class='fa fa-venus' aria-hidden='true'>"
-            pass_this.name_2 = return_data['names']['name_2']
-            pass_this.global_spinning_wheel=true
-            pass_this.name_1_gelijkaardig = return_data['names']['name_2']
-      			// Draw time series
-      			draw_timeseries(return_data['ts'],pass_this.name_1, pass_this.name_2 )
-            // Increase the counter
-            pass_this.counter_lookups  += 1;
-            console.log(pass_this.counter_lookups)
-            // Check flag
-            if(pass_this.counter_lookups > 3) pass_this.more_than_5_lookups = true
-        })
-    },
-    submit_names_landing_page:function(){
-      this.activate_page('lookup')
       var pass_this = this
-      this.global_spinning_wheel=false
-        $.get(
-          url='/get_stats',
-          data={
-            'name_1':this.name_1,
-            'name_2':null,
-            'sex_name_1':null,
-            'sex_name_2':null,
-            'region':this.region,
-            'user_ID':user_ID,
-            'session_ID':session_ID
-          },
-          callback=function(return_data){
-            console.log(return_data)
-
-            pass_this.stats_div = false
-            // Set stars
-            score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']
-            name_numbers = ['name_1','name_2']
-            for(i=0; i<score_names.length;i++ ){
-              score_name = score_names[i]
-              for(j=0; j<name_numbers.length; j++){
-                name_number = name_numbers[j]
-                for(k=0; k<4; k++ ){
-                  pass_this[score_name][name_number][k+1]['full'] = false
-                  pass_this[score_name][name_number][k+1]['half_empty'] = false
-                  pass_this[score_name][name_number][k+1]['empty'] = false
-                  if(k + 1 - return_data[score_name][name_number]<0.5){
-                    pass_this[score_name][name_number][k+1]['full'] = true
-                  }else if(k + 1 - return_data[score_name][name_number] < 1){
-                    pass_this[score_name][name_number][k+1]['half_empty'] = true
-                  }else{
-                    pass_this[score_name][name_number][k+1]['empty'] = true
-                  }
-                }
-              }
-            }
-            pass_this.name_1_meaning = return_data['meanings']['name_1']
-            pass_this.name_2_meaning = return_data['meanings']['name_2']
-            pass_this.name_1_gelijkaardig = return_data['names']['name_2']
-            pass_this.lookup_sex_selection.prim_name['female_selected'] = return_data['sexes']['name_1'] == 'F' ? true : false
-            pass_this.lookup_sex_selection.prim_name['male_selected'] = return_data['sexes']['name_1'] == 'M' ? true : false
-            pass_this.lookup_sex_selection.ref_name['female_selected'] = return_data['sexes']['name_2'] == 'F' ? true : false
-            pass_this.lookup_sex_selection.ref_name['male_selected'] = return_data['sexes']['name_2'] == 'M' ? true : false
-            pass_this.lookup_sex_selection['prim_name']['icon'] = return_data['sexes']['name_1'] == 'M' ? 
-                           "<i class='fa fa-mars' aria-hidden='true'>" : "<i class='fa fa-venus' aria-hidden='true'>"
-            pass_this.name_2 = return_data['names']['name_2']
-            pass_this.global_spinning_wheel=true
-            
-            // Draw time series
-            draw_timeseries(return_data['ts'],pass_this.name_1, pass_this.name_2 )
-
-            // Increase the counter
-            pass_this.counter_lookups  += 1;
-            console.log(pass_this.counter_lookups)
-        })
-    },
+    	$.get(
+    		url='/get_stats',
+    		data={
+    			'name_1':this.lookup_input['prim_name']['name'],
+          'name_2':this.lookup_input['ref_name']['name'],
+          'sex_name_1':(this.lookup_input['prim_name']['male_selected'] ? "M" : "F"),
+          'sex_name_2':(this.lookup_input['ref_name']['male_selected'] ? "M" : "F"),
+    			'user_ID':user_ID,
+    			'session_ID':session_ID,
+          'from_landing_page': (from_which_page == 'landing_page' ? true : false)
+    		},
+    		callback=function(return_data){
+          console.log(return_data)
+          pass_this.stats_div = false
+    			// Set stars
+          score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']
+          name_numbers = ['name_1','name_2']
+    			for(i=0; i<score_names.length;i++ ){
+    				score_name = score_names[i]
+    				for(j=0; j<name_numbers.length; j++){
+              name_number = name_numbers[j]
+              for(k=0; k<4; k++ ){
+	      				pass_this[score_name][name_number][k+1]['full'] = false
+	      				pass_this[score_name][name_number][k+1]['half_empty'] = false
+	      				pass_this[score_name][name_number][k+1]['empty'] = false
+	      				if(k + 1 - return_data[score_name][name_number]<0.5){
+	      					pass_this[score_name][name_number][k+1]['full'] = true
+	      				}else if(k + 1 - return_data[score_name][name_number] < 1){
+	      					pass_this[score_name][name_number][k+1]['half_empty'] = true
+	      				}else{
+	      					pass_this[score_name][name_number][k+1]['empty'] = true
+	      				}
+	      			}
+	      		}
+    			}
+          pass_this.lookup_output['prim_name']['name'] = pass_this.lookup_input['prim_name']['name']
+          pass_this.lookup_output['prim_name']['meaning'] = return_data['meanings']['name_1']
+          
+          pass_this.lookup_output['prim_name']['female_selected'] = return_data['sexes']['name_1'] == 'F'      
+          pass_this.lookup_output['prim_name']['male_selected'] = return_data['sexes']['name_1'] == 'M'
+          
+          pass_this.lookup_output['prim_name']['gelijkaardig'] = return_data['names']['name_2']
+          pass_this.global_spinning_wheel=true
+    			
+          // Draw time series
+    			draw_timeseries(return_data['ts'],pass_this.lookup_output['prim_name']['name'], pass_this.name_2 )
+          // Increase the counter and check counter flag
+          pass_this.counter_lookups  += 1;
+          if(pass_this.counter_lookups > 3) pass_this.more_than_5_lookups = true
+          // Deactivate spinning wheel
+          pass_this.global_spinning_wheel=true
+      })
+    }
   }
 })
 function validateEmail(email) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(email);
+}
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 
