@@ -1,8 +1,6 @@
-
-console.log('Inside main.js')
-
 var session_ID;
 var user_ID;
+var logged_in = false;
 var test_event
 vm = new Vue({
   el: '#app',
@@ -23,6 +21,11 @@ vm = new Vue({
       list:true,
       about:true,
       login:true
+    },
+    active_subpage:{
+      create_login:true,
+      login:false,
+      logged_in:true
     },
     global_spinning_wheel:true,
     stats_div:true,
@@ -228,11 +231,11 @@ vm = new Vue({
     }
   },
   methods: {
-    stringder_initialize(){ 
+    stringder_initialize:function(){ 
       this.global_spinning_wheel=false
-      this.stringer_request_names(5, initialize = true)   
+      this.stringer_request_names(true)   
     },
-    stringder_actions_after_feedback(feedback){
+    stringder_actions_after_feedback:function(feedback){
       // Return feedback
       this.stringder_return_vote(this.suggested_names_in_frontend[0], feedback)
       // Drop the name
@@ -242,10 +245,10 @@ vm = new Vue({
       // Request new names
       if(this.suggestion_requesting_strings === false){
         this.suggestion_requesting_strings = true
-        this.stringer_request_names()  
+        this.stringer_request_names(false)  
       }
     },
-    stringer_request_names(initialize = false){
+    stringer_request_names:function(initialize){
       
       // How many to request? If initialize, 10. Else, 10 minus the length of the names already on frontend
       how_many_to_request = initialize===false ? (5 - this.suggested_names_in_frontend.length) :  5   
@@ -268,13 +271,13 @@ vm = new Vue({
             pass_this.suggested_names_in_frontend = return_data['names']
           }else{
             pass_this.suggested_names_in_frontend = pass_this.suggested_names_in_frontend.concat(return_data['names'])
-            pass_this.stringer_request_names()
+            pass_this.stringer_request_names(false)
           } 
           pass_this.global_spinning_wheel=true
        }
       ) 
     },
-    stringder_return_vote(name, vote){
+    stringder_return_vote:function(name, vote){
       pass_this = this
       $.get({
           url: '/return_vote',
@@ -289,24 +292,87 @@ vm = new Vue({
           }
       });
     },
+    activate_subpage_login:function(which_one){
+      if(which_one == 'login'){
+        this.active_subpage['create_login'] = true
+        this.active_subpage['login'] = false
+        this.active_subpage['logged_in'] = true
+      }else if(which_one == 'create_login'){
+        this.active_subpage['create_login'] = false
+        this.active_subpage['login'] = true
+        this.active_subpage['logged_in'] = true
+      }else if(which_one == 'logged_in'){
+        this.active_subpage['create_login'] = true
+        this.active_subpage['login'] = true
+        this.active_subpage['logged_in'] = false
+      }
+    },
     create_login:function(){
-      console.log(this.user_create_login['email'])
-      console.log(this.user_create_login['password'])
-      console.log(this.user_create_login['repeat_password'])
       if(!validateEmail(this.user_create_login['email'])){
-        console.log('Not a valid email address')
+        alert('Please enter a valid email')
         return null
       }
       if(this.user_create_login['password'] != this.user_create_login['repeat_password'] ){
-        console.log('Passwords do not match')
+        alert('Passwords do not match')
         return null
       }
+      pass_this = this
+      this.global_spinning_wheel=false      
+      $.get({
+          url: '/create_login',
+          dataType:'json',
+          data: {'user_ID':user_ID,
+                  'session_ID':session_ID,
+                  'email':pass_this.user_create_login['email'],
+                  'password':pass_this.user_create_login['password'],
+                  'repeat_password':pass_this.user_create_login['repeat_password']
+          },
+          success:function(return_data){
+            console.log(return_data)
+            logged_in = return_data['logged_in']
+            if(logged_in){
+              pass_this.activate_subpage_login('logged_in') 
+              pass_this.user_login['email'] = pass_this.user_create_login['email']              
+            }else{
+              alert(return_data['error'])
+              console.log(return_data['error'])
+            }
+            pass_this.global_spinning_wheel=true  
+          }
+      });      
     },
     login:function(){
       if(!validateEmail(this.user_login['email'])){
-        console.log('Not a valid email address')
+        alert('no valid email address')
         return null
       }
+      if(this.user_login['password'] == ''){
+        alert('please enter a password')
+        return null
+      }
+      this.global_spinning_wheel=false      
+      pass_this = this
+      $.get({
+          url: '/login',
+          dataType:'json',
+          data: {'user_ID':user_ID,
+                  'session_ID':session_ID,
+                  'email':pass_this.user_login['email'],
+                  'password':pass_this.user_login['password']
+          },
+          success:function(return_data){
+            console.log(return_data)
+            logged_in = return_data['logged_in']
+            if(logged_in){
+              user_ID = return_data['user_ID']
+              pass_this.activate_subpage_login('logged_in')    
+            }else{
+              alert(return_data['error']) 
+              console.log('Login failed')
+            }
+            pass_this.global_spinning_wheel=true   
+          }
+      });      
     },
     suggestion_change_sex:function(){
       if(this.suggestion_sex['male_selected']){
@@ -356,7 +422,6 @@ vm = new Vue({
       }
     },
     activate_page: function(which_one){
-      console.log(which_one)
       this.stats_div = true
       for(page in this.active_page){
         if(page==which_one) this.active_page[page]=false 
@@ -383,29 +448,6 @@ vm = new Vue({
         this[star_array_clicked[0]][star_array_clicked[1]][star_array_clicked[2]][i+1]['empty']=true
       }
     },
-    // get_suggestion:function(feedback){
-    //   var pass_this = this
-    //   this.spinning_wheel_suggestions = false
-    //   $.get(
-    //     url='/get_suggestion',
-    //     data={
-    //       'user_ID':user_ID,
-    //       'session_ID':session_ID,
-    //       'suggestion_scores':JSON.stringify(pass_this.computed_suggest_score_ints),
-    //       'requested_sex':pass_this.suggestion_request_sex,
-    //       'previous_suggestion':pass_this.returned_suggestion['name'],
-    //       'previous_suggestion_sex':pass_this.returned_suggestion['sex'],
-    //       'feedback':feedback ? feedback : 'suggestion_initialisation',
-    //       'how_many':10
-    //       //'names_alread_on_frontend':
-    //     },
-    //     callback=function(return_data){
-    //       pass_this.returned_suggestion['name'] = return_data['name']
-    //       pass_this.returned_suggestion['sex'] = return_data['sex']
-    //       pass_this.spinning_wheel_suggestions = true
-    //     }
-    //   )
-    // },
     delete_listed_name:function(name_to_delete, rank){
       this.global_spinning_wheel=false      
       pass_this = this
@@ -414,6 +456,8 @@ vm = new Vue({
           url='/delete_name',
           data={
             'user_ID':user_ID,
+            'session_ID':session_ID,
+            'logged_in':logged_in,
             'name':name_to_delete,
             'sex':sex,
             'rank':rank
@@ -463,6 +507,8 @@ vm = new Vue({
           url='/swap_ranks',
           data={
             'user_ID':user_ID,
+            'session_ID':session_ID,
+            'logged_in':logged_in,
             'name_one': name_to_change_rank['name'],
             'name_two': name_to_swap['name'],
             'new_rank_name_one' : name_to_swap['rank'],
@@ -483,6 +529,7 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
+            'logged_in':logged_in,
             'name': pass_this.name_to_add,
             'sex': pass_this.selection_liked_names['male_selected'] ? 'M' : 'F'
           },
@@ -516,7 +563,9 @@ vm = new Vue({
         $.get(
           url='/request_liked_names',
           data={
-            'user_ID':user_ID
+            'user_ID':user_ID,
+            'session_ID':session_ID,
+            'logged_in':logged_in
           },
           callback=function(return_data){
             pass_this.global_spinning_wheel=true
@@ -525,7 +574,6 @@ vm = new Vue({
           })
     },      
     submit_names: function(from_which_page) {
-      console.log(from_which_page)
       // If no name is filled in, return null. TODO show warning
       if(this.lookup_input['prim_name']['name'] == '') return null
       // Capitalize first letter
@@ -547,7 +595,6 @@ vm = new Vue({
           'from_landing_page': (from_which_page == 'landing_page' ? true : false)
     		},
     		callback=function(return_data){
-          console.log(return_data)
           pass_this.stats_div = false
     			// Set stars
           score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']

@@ -6,7 +6,8 @@ flask_app/venv/
 *.pyc
 
 */.ipynb_checkpoints/
-.ipynb_checkpoints
+.ipynb_checkpoints/*
+.ipynb_checkpoints/
 
 .DS_Store
 flask_app/.DS_Store

@@ -1,9 +1,18 @@
 /* Play with colors and fonts*/
 /* -------------------------*/
+
+
+
+html {
+  position: relative;
+  min-height: 100%;
+}
 body{
   background-color:rgba(255, 204, 0,0.1);
   color:#386088;
   font-size:1.6em;
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
 }
 .hide_icon{
   display:none;
@@ -20,8 +29,6 @@ input .form-control{
 }
 .form-control:focus{
   border-color:#557799;
-/*  -webkit-box-shadow:1px 1px 1px #557799;
-  box-shadow:1px 1px 1px #557799;*/
   -webkit-box-shadow:None;
   box-shadow:None;
 }
@@ -50,7 +57,26 @@ p, div{
   background-color: rgba(255, 204, 0,0.1);
 }
 .internal_link{
+  color: #386088;
   border-bottom: 0.2em solid #22B3C8;
+  outline: 0;
+}
+a, a:focus, a:hover, a:visited{
+  color: inherit; /* blue colors for links too */
+  text-decoration: inherit; /* no underline */
+  /*box-sizing: inherit;*/
+  outline: 0;
+}
+
+/* Footer */
+/*--------------------*/
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  /*background-color: rgba(255, 204, 0,0.1);*/
 }
 
 /* Change sex buttons */

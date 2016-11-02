@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import pandas as pd
 import numpy as np
@@ -24,6 +25,70 @@ application = Flask(__name__, static_url_path='')
 
 sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-west-1.rds.amazonaws.com:5432/grb_2016_03' %('namabayi_dev', 'namabayi_dev_40'))
 
+@application.route('/forespell')
+def forespell():
+    return redirect("https://www.forespell.com")
+
+@application.route('/forespell_kasper')
+def forespell_kasper():
+    return redirect("https://www.forespell.com/resume/kasper/")
+
+@application.route('/create_login', methods=['GET'])
+def create_login():
+	user_ID = request.args.get('user_ID')
+	session_ID = request.args.get('session_ID')
+	email = request.args.get('email').lower()
+	password = generate_password_hash(request.args.get('password'))
+	repeat_password = generate_password_hash(request.args.get('repeat_password'))
+	
+	# Check if user doesn't exist!
+	params =  {'email':email}
+	user_test = pd.read_sql(''' SELECT * FROM registered_users
+										WHERE email = %(email)s''', sql_conn, params = params)
+	if(len(user_test)>0):
+		print('user already existed')
+		return jsonify(logged_in = False, error = 'user already existed')
+	user_information = {
+		'user_id' : user_ID,
+		'session_id' : session_ID,
+		'email' : email,
+		'password': password,
+		'repeat_password' : repeat_password,
+		'registration_time' : datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f')
+	}
+	write_dict_to_sql_usage(user_information, 'registered_users')
+	return jsonify(logged_in = True, error = 'no_error')
+
+@application.route('/login', methods=['GET'])
+def login():
+	user_ID = request.args.get('user_ID')
+	session_ID = request.args.get('session_ID')
+	email = request.args.get('email').lower()
+	password = request.args.get('password')
+	params = {'email':email, 'password':password}
+	user_record = pd.read_sql(''' SELECT password, user_id FROM registered_users
+										WHERE email = %(email)s''', sql_conn, params = params)
+	if(len(user_record) == 0):
+		error = 'Unknown user'
+		logged_in = False
+		return jsonify(logged_in = logged_in, user_ID = user_ID, error=error)
+	password_test = check_password_hash(password = password, pwhash=user_record['password'][0])
+
+	if(password_test):
+		user_ID = user_record['user_id'][0]
+		logged_in = True
+		error = 'no_error'
+	else: 
+		error = 'Wrong password'
+		logged_in = False
+	return jsonify(logged_in = logged_in, user_ID = user_ID, error=error)
+
+def write_dict_to_sql_usage(info_dict, table_name):
+	# Write in SQL table lookups
+	to_write_away = pd.DataFrame.from_dict([info_dict])
+	to_write_away.to_sql(name=table_name,con = sql_conn, if_exists='append',index=False)
+	return None	
+
 @application.route('/request_user_ID', methods=['GET'])
 def request_user_ID():
 	user_ID = b64encode(os.urandom(24)).decode('utf-8')
@@ -37,94 +102,156 @@ def request_user_ID():
 	write_dict_to_sql_usage(session_info, 'sessions')
 	return jsonify(user_ID = user_ID, session_ID = session_ID)
 
+def query_liked_names(user_ID, session_ID, logged_in):
+	if(logged_in):
+		query = '''SELECT name, sex, rank
+					FROM feedback 
+					WHERE user_id = %(user_id)s
+					AND feedback = 'like' 
+					'''
+		params = {'user_id':user_ID}
+	else:
+		query = '''SELECT name, sex, rank
+					FROM feedback 
+					WHERE user_id = %(user_id)s
+					AND session_id = %(session_id)s
+					AND feedback = 'like' 
+					'''
+		params = {'user_id':user_ID, 'session_id':session_ID}	
+	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).fillna(0).to_dict(orient='records')
+	return liked_names
+
 @application.route('/request_liked_names', methods=['GET'])
 def request_liked_names():
 	user_ID = request.args.get('user_ID')
-	query = '''SELECT name, sex, rank
-				FROM feedback 
-				WHERE user_id = %(user_id)s
-				AND feedback = 'like' '''
-	params = {'user_id':user_ID}	
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).fillna(0).to_dict(orient='records')
+	session_ID = request.args.get('session_ID')
+	logged_in = request.args.get('logged_in') == 'true'
+	print('Requesting liked names, logged_in = %s' %str(logged_in))
+	liked_names = query_liked_names(user_ID, session_ID, logged_in)
 	return jsonify(liked_names = liked_names)
 
 @application.route('/swap_ranks', methods=['GET'])
 def swap_ranks():
 	user_ID = request.args.get('user_ID')
+	session_ID = request.args.get('session_ID')
+	logged_in = request.args.get('logged_in') == 'true'
 	sex = request.args.get('sex')
 	name_one = request.args.get('name_one').strip().title()
 	name_two = request.args.get('name_two').strip().title()
 	new_rank_name_one = int(request.args.get('new_rank_name_one'))
 	new_rank_name_two = int(request.args.get('new_rank_name_two'))
 
-	# Update name one
-	params = {'name_one':name_one, 'user_id':user_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
-	query = '''UPDATE feedback 
-					SET rank = %(new_rank_name_one)s
-					WHERE name = %(name_one)s 
-					AND user_id = %(user_id)s 
-					AND sex  = %(sex)s'''
-	sql_conn.execute(query, params)
-	# Update name two
-	params = {'name_two':name_two, 'user_id':user_ID, 'sex':sex, 'new_rank_name_two':new_rank_name_two}
-	query = '''UPDATE feedback 
-					SET rank = %(new_rank_name_two)s
-					WHERE name = %(name_two)s 
-					AND user_id = %(user_id)s 
-					AND sex  = %(sex)s'''
-	sql_conn.execute(query, params)
+	# Check if logged in
+	# Hier nog potentiele bug: als een user al een lijstje heeft, pas na een tijd inlogt, kunnen de namen er dubbel instaan!
+	if(logged_in):
+		params = {'name_one':name_one, 'user_id':user_ID,'sex':sex, 'new_rank_name_one':new_rank_name_one}
+		query = '''UPDATE feedback 
+						SET rank = %(new_rank_name_one)s
+						WHERE name = %(name_one)s 
+						AND user_id = %(user_id)s 
+						AND sex  = %(sex)s'''
+		sql_conn.execute(query, params)
+		# Update name two
+		params = {'name_two':name_two, 'user_id':user_ID,'sex':sex, 'new_rank_name_two':new_rank_name_two}
+		query = '''UPDATE feedback 
+						SET rank = %(new_rank_name_two)s
+						WHERE name = %(name_two)s 
+						AND user_id = %(user_id)s 
+						AND sex  = %(sex)s'''
+		sql_conn.execute(query, params)
+	else:	
+		params = {'name_one':name_one, 'user_id':user_ID,'session_id':session_ID, 'sex':sex, 'new_rank_name_one':new_rank_name_one}
+		query = '''UPDATE feedback 
+						SET rank = %(new_rank_name_one)s
+						WHERE name = %(name_one)s 
+						AND user_id = %(user_id)s 
+						AND session_ID = %(session_id)s 
+						AND sex  = %(sex)s'''
+		sql_conn.execute(query, params)
+		# Update name two
+		params = {'name_two':name_two, 'user_id':user_ID, 'session_id':session_ID,'sex':sex, 'new_rank_name_two':new_rank_name_two}
+		query = '''UPDATE feedback 
+						SET rank = %(new_rank_name_two)s
+						WHERE name = %(name_two)s 
+						AND user_id = %(user_id)s 
+						AND session_ID = %(session_id)s 
+						AND sex  = %(sex)s'''
+		sql_conn.execute(query, params)
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name, sex, rank
-				FROM feedback 
-				WHERE user_id = %(user_id)s
-				AND feedback = 'like'  '''
-	params = {'user_id':user_ID}
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	liked_names = query_liked_names(user_ID, session_ID, logged_in)
 	return jsonify(liked_names = liked_names)	
 
 @application.route('/delete_name', methods=['GET'])
 def delete_name():
 	user_ID = request.args.get('user_ID')
+	session_ID = request.args.get('session_ID')
+	logged_in = request.args.get('logged_in') == 'true'
 	sex = request.args.get('sex')
 	name = request.args.get('name').strip().title()
 	rank_deleted_name = request.args.get('rank')
 	# TO DO: reset all the ranks!
-	query = '''DELETE FROM feedback 
-					WHERE name = %(name)s 
-					AND user_id = %(user_id)s 
-					AND sex  = %(sex)s'''
-	params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':None}
-	sql_conn.execute(query, params)
-	# Update the ranks
-	query = '''UPDATE feedback 
-					SET rank = rank - 1
-					WHERE user_id = %(user_id)s 
-					AND sex  = %(sex)s
-					AND rank > %(rank)s'''
-	params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':rank_deleted_name}
-	sql_conn.execute(query, params)
-	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name, sex, rank
-				FROM feedback 
-				WHERE user_id = %(user_id)s
-				AND feedback = 'like'  '''
-	params = {'user_id':user_ID}
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	if(logged_in):
+		query = '''DELETE FROM feedback 
+						WHERE name = %(name)s 
+						AND user_id = %(user_id)s 
+						AND sex  = %(sex)s'''
+		params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':None}
+		sql_conn.execute(query, params)
+		# Update the ranks
+		query = '''UPDATE feedback 
+						SET rank = rank - 1
+						WHERE user_id = %(user_id)s 
+						AND sex  = %(sex)s
+						AND rank > %(rank)s'''
+		params = {'name':name, 'user_id':user_ID, 'sex':sex, 'rank':rank_deleted_name}
+		sql_conn.execute(query, params)	
+	else:
+		query = '''DELETE FROM feedback 
+						WHERE name = %(name)s 
+						AND user_id = %(user_id)s 
+						AND session_id = %(session_id)s 
+						AND sex  = %(sex)s'''
+		params = {'name':name, 'user_id':user_ID,'session_id':session_ID, 'sex':sex, 'rank':None}
+		sql_conn.execute(query, params)
+		# Update the ranks
+		query = '''UPDATE feedback 
+						SET rank = rank - 1
+						WHERE user_id = %(user_id)s 
+						AND session_id = %(session_id)s 
+						AND sex  = %(sex)s
+						AND rank > %(rank)s'''
+		params = {'name':name, 'user_id':user_ID,'session_id':session_ID, 'sex':sex, 'rank':rank_deleted_name}
+		sql_conn.execute(query, params)
+	# Query liked names
+	liked_names = query_liked_names(user_ID, session_ID, logged_in)
 	return jsonify(liked_names = liked_names)
 
 @application.route('/add_name', methods=['GET'])
 def add_name():
 	user_ID = request.args.get('user_ID')
 	session_ID = request.args.get('session_ID')
+	logged_in = request.args.get('logged_in') == 'true'
 	name = request.args.get('name').title()
 	sex = request.args.get('sex')
-	rank = determine_rank_for_new_like(user_ID, sex)
+	rank = determine_rank_for_new_like(user_ID, session_ID, sex)
 	# Update the table, change the feedback of the particular name to no_like
 	# First check if the name is not in there
-	query = '''SELECT * FROM feedback 
-					WHERE name = %(name)s AND user_id = %(user_id)s AND sex = %(sex)s'''
-	params = {'name':name, 'user_id': user_ID, 'sex':sex}
-	test = pd.read_sql(sql = query, con = sql_conn, params = params)
+	if(logged_in):
+		query = '''SELECT * FROM feedback 
+					WHERE name = %(name)s 
+					AND user_id = %(user_id)s 
+					AND sex = %(sex)s'''
+		params = {'name':name, 'user_id': user_ID, 'sex':sex}
+		test = pd.read_sql(sql = query, con = sql_conn, params = params)
+	else:
+		query = '''SELECT * FROM feedback 
+					WHERE name = %(name)s 
+					AND user_id = %(user_id)s 
+					AND sex = %(sex)s
+					AND session_id = %(session_id)s'''
+		params = {'name':name, 'user_id': user_ID,'session_id':session_ID, 'sex':sex}
+		test = pd.read_sql(sql = query, con = sql_conn, params = params)
+	
 	# Hier zit een bug in, als de naam al in het systeem zit
 	if(len(test>0)):
 		params={'name':name,
@@ -150,12 +277,7 @@ def add_name():
 					'rank':rank}
 		sql_conn.execute(query, params)
 	# Send back the liked names, a bit the same as request_liked_names
-	query = '''SELECT name, sex, rank
-				FROM feedback 
-				WHERE user_id = %(user_id)s
-				AND feedback = 'like'  '''
-	params = {'user_id':user_ID}
-	liked_names = pd.read_sql(sql=query, con=sql_conn, params=params).to_dict(orient='records')
+	liked_names = query_liked_names(user_ID, session_ID, logged_in)
 	return jsonify(liked_names = liked_names)
 
 @application.route('/create_session_ID', methods=['GET'])
@@ -190,13 +312,13 @@ def write_dict_to_sql_usage(info_dict, table_name):
 	to_write_away.to_sql(name=table_name,con = sql_conn, if_exists='append',index=False)
 	return None	
 
-def determine_rank_for_new_like(user_id, sex):
+def determine_rank_for_new_like(user_id, session_id, sex):
 	query = '''SELECT *
 					FROM feedback
 					WHERE user_id = %(user_id)s
 					AND sex = %(sex)s 
 					AND feedback = 'like' '''
-	params = {'user_id':user_id, 'sex':sex}
+	params = {'user_id':user_id,'session_id':session_id, 'sex':sex}
 	feedback_already_stored = pd.read_sql(sql=query, con=sql_conn, params = params)
 	if(len(feedback_already_stored) > 0 ): rank = np.max(feedback_already_stored['rank'])+1
 	else: rank = 1	
@@ -206,7 +328,7 @@ def determine_rank_for_new_like(user_id, sex):
 def return_vote():
 	# First determine new rank for a like
 	if(request.args.get('feedback') == 'like'):
-		rank = determine_rank_for_new_like(request.args.get('user_ID'), request.args.get('sex'))
+		rank = determine_rank_for_new_like(request.args.get('user_ID'),request.args.get('session_ID'), request.args.get('sex'))
 	else:
 		rank = None	
 
@@ -297,8 +419,9 @@ def get_stringer_suggestion():
 			learning_matrix = learning_matrix.drop_duplicates('name', )
 
 		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
-		learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
+		#learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		print(learning_matrix[['name', 'feedback', 'sex']])
+		learning_matrix = learning_matrix.drop(['score_popular'], axis=1)
 		learning_matrix = drop_unwanted_columns(learning_matrix)
 		learning_matrix = drop_columns_with_no_variation(learning_matrix)
 		learning_matrix = keep_only_interesting_origins(learning_matrix,5)
@@ -326,7 +449,7 @@ def get_stringer_suggestion():
 		test_sample = test_sample.drop(['sex', 'region'], axis = 1)
 		#if(names_already_in_frontend):
 		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
-		test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
+		#test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
 		test_sample['odds_ratio'] = model.predict(test_sample)
 		# Do some other kind of prior calculation
 		#test_sample['odds_ratio'] = test_sample['odds_ratio'] * test_sample['minus18'] / np.sum(test_sample['minus18'])
@@ -343,8 +466,8 @@ def get_stringer_suggestion():
 def get_stats():
 	
 	# Request name info
-	name_1 = request.args.get('name_1').encode('utf-8').strip()
-	name_1 = name_1[0].upper() + name_1[1:] 
+	name_1 = request.args.get('name_1').strip().title()
+	#name_1 = name_1[0].upper() + name_1[1:] 
 	name_2 = ''
 	sex_name_1 = ''
 	sex_name_2 = request.args.get('sex_name_2')
