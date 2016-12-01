@@ -7,7 +7,6 @@ function range(start, count) {
 }
 
 function draw_timeseries(timeseries, name_1, name_2){
-    console.log(name_1)
     //console.log(timeseries['name_2'])
     $('#timeseries_graph').highcharts({
         chart: {
@@ -16,6 +15,8 @@ function draw_timeseries(timeseries, name_1, name_2){
                 fontFamily: "'Josefin Sans', sans-serif",
                 color: "#1C4977"
             },
+            width:null,
+            reflow:true,
         },
         title: {
             text: ' ',

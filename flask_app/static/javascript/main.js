@@ -1,6 +1,10 @@
+
+//Please note that in IE, unlike in Firefox, if the developer tools are not active, 
+//window.console is undefined and calling console.log() will break. 
+//Always protect your calls with window.console && console.log('stuff');
+
 var session_ID;
 var user_ID;
-var logged_in = false;
 var test_event
 vm = new Vue({
   el: '#app',
@@ -11,6 +15,10 @@ vm = new Vue({
       male_selected:false,
       female_selected:true,
       icon:"<i class='fa fa-venus fa-lg' aria-hidden='true'>"
+    },
+    suggestion_type:{
+      random_selected:false,
+      ai_based_selected:true
     },
     counter_lookups:0,
     more_than_5_lookups:false,
@@ -77,6 +85,7 @@ vm = new Vue({
       email:'',
       password:''
     },
+    logged_in:false,
   	score_original:{
   		name_1:{
   			1:{ full: true, half_empty: false, empty: false },
@@ -251,7 +260,7 @@ vm = new Vue({
     stringer_request_names:function(initialize){
       
       // How many to request? If initialize, 10. Else, 10 minus the length of the names already on frontend
-      how_many_to_request = initialize===false ? (5 - this.suggested_names_in_frontend.length) :  5   
+      how_many_to_request = initialize===false ? (10 - this.suggested_names_in_frontend.length) :  10   
       if(how_many_to_request == 0 ){
         this.suggestion_requesting_strings = false 
         return null
@@ -263,7 +272,8 @@ vm = new Vue({
          'user_ID':user_ID,
          'session_ID':session_ID,
          'requested_sex':pass_this.suggestion_sex['female_selected'] ? 'F':'M',
-         'how_many':how_many_to_request
+         'how_many':how_many_to_request,
+         'type':pass_this.suggestion_type['ai_based_selected'] ? 'ai_based':'random',
          //'names_already_in_frontend':temp_comm_strings_in_frontend
        },
        callback=function(return_data){          
@@ -328,14 +338,14 @@ vm = new Vue({
                   'repeat_password':pass_this.user_create_login['repeat_password']
           },
           success:function(return_data){
-            console.log(return_data)
-            logged_in = return_data['logged_in']
-            if(logged_in){
+            window.console && console.log(return_data)
+            pass_this.logged_in = return_data['logged_in']
+            if(pass_this.logged_in){
               pass_this.activate_subpage_login('logged_in') 
               pass_this.user_login['email'] = pass_this.user_create_login['email']              
             }else{
               alert(return_data['error'])
-              console.log(return_data['error'])
+              window.console && console.log(return_data['error'])
             }
             pass_this.global_spinning_wheel=true  
           }
@@ -361,30 +371,63 @@ vm = new Vue({
                   'password':pass_this.user_login['password']
           },
           success:function(return_data){
-            console.log(return_data)
-            logged_in = return_data['logged_in']
-            if(logged_in){
+            window.console && console.log(return_data)
+            pass_this.logged_in = return_data['logged_in']
+            if(pass_this.logged_in){
               user_ID = return_data['user_ID']
               pass_this.activate_subpage_login('logged_in')    
             }else{
               alert(return_data['error']) 
-              console.log('Login failed')
+              window.console && console.log('Login failed')
             }
             pass_this.global_spinning_wheel=true   
           }
       });      
     },
-    suggestion_change_sex:function(){
-      if(this.suggestion_sex['male_selected']){
-        this.suggestion_sex['male_selected'] = false
-        this.suggestion_sex['female_selected'] = true
-        this.suggestion_sex['icon'] = "<i class='fa fa-venus fa-lg' aria-hidden='true'>"
+    suggestion_change_type:function(to){
+      if(to == 'ai_based'){
+        if(this.suggestion_type['ai_based_selected']) return null
+        else{
+          this.suggestion_type['ai_based_selected'] = true
+          this.suggestion_type['random_selected'] = false           
+        }
       }else{
-        this.suggestion_sex['male_selected'] = true
-        this.suggestion_sex['female_selected'] = false        
-        this.suggestion_sex['icon'] = "<i class='fa fa-mars fa-lg' aria-hidden='true'>"
+        if(this.suggestion_type['random']) return null
+        else{
+          this.suggestion_type['ai_based_selected'] = false
+          this.suggestion_type['random_selected'] = true            
+        }      
       }
       this.stringder_initialize();
+    },
+    suggestion_change_sex:function(to){
+      if(to == 'to_male'){
+        if(this.suggestion_sex['male_selected']) return null
+        else{
+          this.suggestion_sex['male_selected'] = true
+          this.suggestion_sex['female_selected'] = false           
+        }
+      }else{
+        if(this.suggestion_sex['female_selected']) return null
+        else{
+          this.suggestion_sex['male_selected'] = false
+          this.suggestion_sex['female_selected'] = true            
+        }
+      }
+      this.stringder_initialize();
+      // console.log('Change suggetion sex')
+      // console.log('Prior: Male sel: ' + this.suggestion_sex['male_selected'] + ' Female sel: ' + this.suggestion_sex['female_selected'])
+      // if(this.suggestion_sex['male_selected']){
+      //   this.suggestion_sex['male_selected'] = false
+      //   this.suggestion_sex['female_selected'] = true
+      //   this.suggestion_sex['icon'] = "<i class='fa fa-venus fa-lg' aria-hidden='true'>"
+      // }else{
+      //   this.suggestion_sex['male_selected'] = true
+      //   this.suggestion_sex['female_selected'] = false        
+      //   this.suggestion_sex['icon'] = "<i class='fa fa-mars fa-lg' aria-hidden='true'>"
+      // }
+      // console.log('Post: Male sel: ' + this.suggestion_sex['male_selected']+' Female sel: +'+this.suggestion_sex['female_selected'])
+      //this.stringder_initialize();
     },
     liked_names_change_sex:function(){
       if(this.selection_liked_names['male_selected']){
@@ -457,7 +500,7 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
-            'logged_in':logged_in,
+            'logged_in':pass_this.logged_in,
             'name':name_to_delete,
             'sex':sex,
             'rank':rank
@@ -483,14 +526,14 @@ vm = new Vue({
       // Now get the names above it
       names_above_in_rank = this.liked_names_displayed.filter(function(liked_name){
         if(pass_this.selection_liked_names['male_selected']){
-          return (liked_name['sex'] == 'M') & (liked_name['rank'] > name_to_change_rank['rank'])
+          return (liked_name['sex'] == 'M') & (liked_name['rank'] < name_to_change_rank['rank'])
         }else{
-          return (liked_name['sex'] == 'F')  & (liked_name['rank'] > name_to_change_rank['rank'])
+          return (liked_name['sex'] == 'F')  & (liked_name['rank'] < name_to_change_rank['rank'])
         } 
       })
       if(names_above_in_rank.length ==0 ) return null
       // Get the first name above it
-      closest_rank = names_above_in_rank.sort(function(a, b){return a['rank'] - b['rank']});
+      closest_rank = names_above_in_rank.sort(function(a, b){return b['rank'] - a['rank']});
       closest_rank = closest_rank[0]['rank']
       name_to_swap = this.liked_names_displayed.filter(function(liked_name){
         if(pass_this.selection_liked_names['male_selected']){
@@ -508,7 +551,7 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
-            'logged_in':logged_in,
+            'logged_in':pass_this.logged_in,
             'name_one': name_to_change_rank['name'],
             'name_two': name_to_swap['name'],
             'new_rank_name_one' : name_to_swap['rank'],
@@ -529,7 +572,7 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
-            'logged_in':logged_in,
+            'logged_in':pass_this.logged_in,
             'name': pass_this.name_to_add,
             'sex': pass_this.selection_liked_names['male_selected'] ? 'M' : 'F'
           },
@@ -553,9 +596,32 @@ vm = new Vue({
       })
       // sort based on the rank. Hoe hoger de rank, hoe hoger op de pagina
       this.liked_names_displayed = this.liked_names_displayed.sort(function(a,b){
-        return b['rank'] - a['rank']
+        return a['rank'] - b['rank']
       })
 
+    },
+    export:function(){
+      var pass_this = this 
+      this.global_spinning_wheel=false 
+      if(pass_this.logged_in === false){
+        alert('Log in first')
+        this.global_spinning_wheel=true 
+        return null
+      }
+      $.get(
+        url='/export',
+        data={
+          'user_ID':user_ID,
+          'session_ID':session_ID,
+          'logged_in':pass_this.logged_in
+        },
+        callback=function(return_data){
+          window.console && console.log(return_data)
+          window.console && console.log('hopefully returned csv');
+          pass_this.global_spinning_wheel=true
+          file_link = '/' + return_data['file_link']
+          window.open(file_link);
+        })
     },
     request_liked_names:function(){
         var pass_this = this
@@ -565,23 +631,39 @@ vm = new Vue({
           data={
             'user_ID':user_ID,
             'session_ID':session_ID,
-            'logged_in':logged_in
+            'logged_in':pass_this.logged_in
           },
           callback=function(return_data){
+            // Check for which sex the user already liked to most names, set the liked names sex to this sex
+            if(return_data['liked_names'].length > 0){
+              males_or_females = return_data['liked_names'].filter(is_female).length > return_data['liked_names'].length/2
+              pass_this.selection_liked_names['male_selected'] = males_or_females;
+              pass_this.selection_liked_names['female_selected'] = !males_or_females;              
+            }
             pass_this.global_spinning_wheel=true
             pass_this.liked_names = return_data['liked_names']            
             pass_this.display_liked_names()
           })
     },      
     submit_names: function(from_which_page) {
+      // If from gelijkaardige naam, first replace lookup input
+      if(from_which_page == 'gelijkaardig'){
+        this.lookup_input['prim_name']['name'] = this.lookup_output['prim_name']['gelijkaardig']
+      }
       // If no name is filled in, return null. TODO show warning
-      if(this.lookup_input['prim_name']['name'] == '') return null
+      if(this.lookup_input['prim_name']['name'] == ''){
+        alert('Please enter a name')
+        return null
+      } 
       // Capitalize first letter
       this.lookup_input['prim_name']['name'] = capitalizeFirstLetter(this.lookup_input['prim_name']['name'])
-		  // If the user comes from the landing page, activate the lookup page
-      if(from_which_page == 'landing_page') this.activate_page('lookup')
-      // Activate the spinning wheel
+		  // Activate the spinning wheel
       this.global_spinning_wheel=false
+      // If the user comes from the suggestions, take the last suggested name
+      if(from_which_page == 'suggestions'){
+        this.lookup_input['prim_name']['name'] = this.suggested_names_in_frontend[0]
+        this.lookup_input['prim_name']['male_selected'] = this.suggestion_sex['male_selected']
+      }
       var pass_this = this
     	$.get(
     		url='/get_stats',
@@ -594,8 +676,7 @@ vm = new Vue({
     			'session_ID':session_ID,
           'from_landing_page': (from_which_page == 'landing_page' ? true : false)
     		},
-    		callback=function(return_data){
-          pass_this.stats_div = false
+    		callback=function(return_data){ 
     			// Set stars
           score_names = ['score_classic','score_trend','score_vintage','score_original','score_popular']
           name_numbers = ['name_1','name_2']
@@ -617,6 +698,7 @@ vm = new Vue({
 	      			}
 	      		}
     			}
+          
           pass_this.lookup_output['prim_name']['name'] = pass_this.lookup_input['prim_name']['name']
           pass_this.lookup_output['prim_name']['meaning'] = return_data['meanings']['name_1']
           
@@ -624,16 +706,36 @@ vm = new Vue({
           pass_this.lookup_output['prim_name']['male_selected'] = return_data['sexes']['name_1'] == 'M'
           
           pass_this.lookup_output['prim_name']['gelijkaardig'] = return_data['names']['name_2']
-          pass_this.global_spinning_wheel=true
-    			
+          
+          // If from the suggetion page, activate the lookup page
+          if(from_which_page == 'suggestions' | from_which_page == 'landing_page'){
+            pass_this.activate_page('lookup')
+          }
+          // If the user comes from the landing page, activate the suggestion page    
+          // if(from_which_page == 'landing_page'){
+          //   if(return_data['sexes']['name_1'] == 'F'   ){
+          //     pass_this.suggestion_sex['female_selected'] = true 
+          //     pass_this.suggestion_sex['male_selected'] = false
+          //     pass_this.suggestion_sex['icon'] = "<i class='fa fa-venus fa-lg' aria-hidden='true'>"
+          //   }else{
+          //     pass_this.suggestion_sex['female_selected'] = false
+          //     pass_this.suggestion_sex['male_selected'] = true
+          //     pass_this.suggestion_sex['icon'] = "<i class='fa fa-mars fa-lg' aria-hidden='true'>"              
+          //   }
+          //   pass_this.activate_page('suggest')
+          //   return null
+          // }    
+          pass_this.global_spinning_wheel=true     
+    			pass_this.stats_div = false
           // Draw time series
     			draw_timeseries(return_data['ts'],pass_this.lookup_output['prim_name']['name'], pass_this.name_2 )
           // Increase the counter and check counter flag
-          pass_this.counter_lookups  += 1;
-          if(pass_this.counter_lookups > 3) pass_this.more_than_5_lookups = true
+          // pass_this.counter_lookups  += 1;
+          // if(pass_this.counter_lookups > 3) pass_this.more_than_5_lookups = true
           // Deactivate spinning wheel
           pass_this.global_spinning_wheel=true
       })
+       
     }
   }
 })
@@ -643,6 +745,9 @@ function validateEmail(email) {
 }
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+function is_female(row) {
+  return row['sex'] == 'M'
 }
 
 

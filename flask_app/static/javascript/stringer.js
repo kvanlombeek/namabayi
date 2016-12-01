@@ -82,7 +82,7 @@ function get_stringer_suggestion(how_many, initialise){
         //'names_already_in_frontend':temp_comm_strings_in_frontend
       },
       callback=function(return_data){
-      	console.log(return_data)
+      	window.console && console.log(return_data)
   		max_key = parseInt(d3.keys(sug_names_in_frontend)[d3.keys(sug_names_in_frontend).length-1])
 
   		for(var i=0;i<return_data['names'].length;i++){
@@ -139,7 +139,7 @@ function actions_after_vote(vote){
 
 	// Fix the bug, if there are no names any more in the front end, let him wait
 	if(d3.keys(sug_names_in_frontend).length == 1){
-	 	console.log('He should be waiting')
+	 	window.console && console.log('He should be waiting')
 	 	switch_wait_screen('on')
 	}
 
@@ -149,8 +149,8 @@ function actions_after_vote(vote){
 	while (pair_not_found){
     	if(sug_names_in_frontend[d3.keys(sug_names_in_frontend)[i]]['man_vote'] == null){
      		active_pair_index = d3.keys(sug_names_in_frontend)[i]
-     		console.log( 'Active pair index: '+ active_pair_index)
-     		console.log(sug_names_in_frontend[active_pair_index])
+     		window.console && console.log( 'Active pair index: '+ active_pair_index)
+     		window.console && console.log(sug_names_in_frontend[active_pair_index])
      		pair_not_found = false
      	}
      	i++;

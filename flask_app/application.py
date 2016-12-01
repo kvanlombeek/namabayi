@@ -1,10 +1,14 @@
 # coding=utf-8
-
-from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
+from __future__ import unicode_literals
+from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import pandas as pd
 import numpy as np
+import sklearn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import cross_val_predict, GridSearchCV, KFold
 import datetime
 import time
 import math
@@ -15,8 +19,8 @@ import re
 from sqlalchemy import create_engine
 import psycopg2
 from copy import deepcopy
-from naive_bayes_lib import drop_unwanted_columns, drop_columns_with_no_variation, \
-                                drop_equal_columns, keep_only_interesting_origins, Naive_bayes_model
+#from naive_bayes_lib import drop_unwanted_columns, drop_columns_with_no_variation, \
+#                                drop_equal_columns, keep_only_interesting_origins, Naive_bayes_model
 
 
 sys.path.append('../')
@@ -27,11 +31,11 @@ sql_conn = create_engine('postgresql://%s:%s@forespellpostgis.cusejoju89w7.eu-we
 
 @application.route('/forespell')
 def forespell():
-    return redirect("https://www.forespell.com")
+	return redirect("https://www.forespell.com")
 
 @application.route('/forespell_kasper')
 def forespell_kasper():
-    return redirect("https://www.forespell.com/resume/kasper/")
+	return redirect("https://www.forespell.com/resume/kasper/")
 
 @application.route('/create_login', methods=['GET'])
 def create_login():
@@ -93,12 +97,16 @@ def write_dict_to_sql_usage(info_dict, table_name):
 def request_user_ID():
 	user_ID = b64encode(os.urandom(24)).decode('utf-8')
 	session_ID = b64encode(os.urandom(24)).decode('utf-8')
+	window_width = request.args.get('window_width')
+	window_height = request.args.get('window_height')
 	# Create session info dict and store it
 	session_info = {'session_ID':session_ID,
 					'user_ID':user_ID,
 					'ip_address' : request.remote_addr,
 					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
-					'user_agent':request.headers.get('User-Agent')}
+					'user_agent':request.headers.get('User-Agent'),
+					'window_width': window_width,
+					'window_height': window_height}
 	write_dict_to_sql_usage(session_info, 'sessions')
 	return jsonify(user_ID = user_ID, session_ID = session_ID)
 
@@ -126,7 +134,7 @@ def request_liked_names():
 	user_ID = request.args.get('user_ID')
 	session_ID = request.args.get('session_ID')
 	logged_in = request.args.get('logged_in') == 'true'
-	print('Requesting liked names, logged_in = %s' %str(logged_in))
+	print('Requesting liked names, logged_in = {}'.format(logged_in))
 	liked_names = query_liked_names(user_ID, session_ID, logged_in)
 	return jsonify(liked_names = liked_names)
 
@@ -343,6 +351,15 @@ def return_vote():
 	write_dict_to_sql_usage(feedback, 'feedback')
 	return jsonify(whatever = '')
 
+def store_names_awaiting_feedback(names, sex, user_id, session_id):
+	to_store = pd.DataFrame({'name':names, 
+							'user_id':np.repeat(user_id, len(names)), 
+							'session_id':np.repeat(session_id, len(names)),
+							'requested_sex':np.repeat(sex, len(names))})
+	to_store.to_sql(name='awaiting_feedback', index=False, if_exists = 'append', con = sql_conn)
+	print('{} suggestions stored away in awaiting feedback'.format(len(names)))
+	return None
+
 @application.route('/get_stringer_suggestion', methods=['GET'])
 def get_stringer_suggestion():
 	# Request parameters
@@ -350,23 +367,45 @@ def get_stringer_suggestion():
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
 	requested_sex = request.args.get('requested_sex')
-	#names_already_in_frontend = request.args.get('names_already_in_frontend')
-	#print(names_already_in_frontend)
+	suggestion_type = request.args.get('type')
+
+	print('User {} wants {} how many suggestions of type {}'.format(user_ID.encode('ascii', 'replace'),how_many,suggestion_type ))
+	
+	# Random suggestions
+	# ------------------
+	if(suggestion_type=='random'):
+		print('Querying random names')
+		query = '''SELECT *
+						FROM voornamen_pivot_2 
+						WHERE sex = %(sex)s
+						AND region = 'Belgie'
+						AND name NOT IN (
+							SELECT name 
+							FROM feedback
+							WHERE user_id = %(user_id)s)
+						AND name NOT IN(
+							SELECT name
+							FROM awaiting_feedback
+							WHERE user_id = %(user_id)s
+							AND requested_sex = %(sex)s
+							AND session_id = %(session_id)s
+						)
+						ORDER BY RANDOM() LIMIT 10'''
+		params = {'sex':requested_sex,'user_id':user_ID, 'session_id':session_ID}
+		suggestion = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[:,'name'].values[:how_many].tolist()
+		store_names_awaiting_feedback(suggestion, requested_sex, user_ID, session_ID)
+		return jsonify(names = suggestion, sex = requested_sex)
+
 	# Check how many postive feedbacks the user already gave.
-	query = '''SELECT *
-					FROM feedback
-					WHERE user_id = %(user_id)s
-					AND sex = %(sex)s '''
+	query = '''SELECT * FROM feedback WHERE user_id = %(user_id)s AND sex = %(sex)s '''
 	params = {'user_id':user_ID, 'sex':requested_sex}
 	names_feedback = pd.read_sql_query(sql = query, con = sql_conn, params=params)
 	n_liked_names = len(names_feedback.loc[names_feedback['feedback'] == 'like',:])
 	n_disliked_names = len(names_feedback.loc[names_feedback['feedback'] != 'like',:])
-	# how many names did he already lookup?
-	query = '''SELECT * 
-				FROM name_lookups 
-				WHERE user_id = %(user_id)s'''
+	
+	# How many names did he already lookup?
+	query = '''SELECT * FROM name_lookups WHERE user_id = %(user_id)s'''
 	lookup_names = pd.read_sql(sql=query, con=sql_conn, params=params)
-
 	lookup_names_1 = lookup_names.loc[lookup_names['sex_name_1']==requested_sex,:]
 	lookup_names_1 = np.unique(lookup_names_1['name_1'].values).tolist()
 	lookup_names_2 = lookup_names.loc[lookup_names['sex_name_2']==requested_sex,:]
@@ -376,120 +415,212 @@ def get_stringer_suggestion():
 	lookup_names = [lookup_name for lookup_name in lookup_names if lookup_name != '']
 	n_lookup_names = len(lookup_names)
 
-	# Normal random suggestion
-	if(((n_liked_names+n_lookup_names) < 2) | (n_disliked_names < 2) ):
-	#if(n_liked_names <6 ):
+	# If the learning matrix is too small, just query popular names
+	# ------------------------------------------------------------
+	if(((n_liked_names+n_lookup_names)<4) | (n_disliked_names<4)):
+		print('Just query popular names')
 		query = '''SELECT *
-						FROM voornamen_pivot 
+						FROM voornamen_pivot_2
 						WHERE sex = %(sex)s
-						AND region = 'Belgie'
+						AND region = 'Vlaanderen'
 						AND score_popular > 3
 						AND name NOT IN (
 							SELECT name 
 							FROM feedback
 							WHERE user_id = %(user_id)s)
+						AND name NOT IN(
+							SELECT name
+							FROM awaiting_feedback
+							WHERE user_id = %(user_id)s
+							AND requested_sex = %(sex)s
+							AND session_id = %(session_id)s
+						)
 						ORDER BY RANDOM() LIMIT 10'''
-		params = {'sex':requested_sex,'user_id':user_ID}
+		params = {'sex':requested_sex,'user_id':user_ID, 'session_id':session_ID}
 		suggestion = pd.read_sql_query(sql = query, con = sql_conn, params=params).loc[:,'name'].values[:how_many].tolist()
+		store_names_awaiting_feedback(suggestion, requested_sex, user_ID, session_ID)
 		return jsonify(names = suggestion, sex = requested_sex)
 
-	# User liked already more than 10 names, train a model and get a scored suggestion
-	if((n_liked_names+n_lookup_names) >= 2 & (n_disliked_names > 2) ):
-		# Create learning matrix with likes and no likes
-		params = {'user_id':user_ID, 'requested_sex':requested_sex}
-		learning_matrix = pd.read_sql_query('''SELECT voornamen_pivot.*, feedback.feedback
-                							FROM voornamen_pivot, feedback
-							                	WHERE voornamen_pivot.name = feedback.name
-							                	AND voornamen_pivot.region = 'Vlaanderen'
-							                	AND voornamen_pivot.sex = feedback.sex
-							                	AND feedback.user_id = %(user_id)s
-							                	AND feedback.sex = %(requested_sex)s;''', 
-							                	con = sql_conn, params=params)
-		# Apend learning matrix with lookup names
-		if(len(lookup_names)>0):
-			params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
-			lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
-	                							FROM voornamen_pivot
-								                	WHERE voornamen_pivot.name = ANY(%(lookup_names)s)
-								                	AND voornamen_pivot.region = 'Vlaanderen'
-								                	AND voornamen_pivot.sex = %(requested_sex)s;''', 
-								                	con = sql_conn, params=params)
-			lookup_names['feedback'] = 'like'
-			learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
-			learning_matrix = learning_matrix.drop_duplicates('name', )
+	# Random forest
+	# --------------
+	params = {'user_id':user_ID, 'requested_sex':requested_sex}
+	query = '''SELECT voornamen_pivot.*, feedback.feedback
+			FROM voornamen_pivot_2 voornamen_pivot, feedback
+			WHERE voornamen_pivot.name = feedback.name
+			AND voornamen_pivot.region = 'Vlaanderen'
+			AND voornamen_pivot.sex = feedback.sex
+			AND feedback.user_id = %(user_id)s;'''
+	learning_matrix = pd.read_sql_query(sql = query, con = sql_conn, params=params)
+	
+	# Apend learning matrix with lookup names
+	if(len(lookup_names)>0):
+		params = {'user_id':user_ID, 'requested_sex':requested_sex, 'lookup_names':lookup_names}
+		lookup_names = pd.read_sql_query('''SELECT voornamen_pivot.*
+											FROM voornamen_pivot_2 as voornamen_pivot
+												WHERE voornamen_pivot.name = ANY(%(lookup_names)s)
+												AND voornamen_pivot.region = 'Vlaanderen'
+												AND voornamen_pivot.sex = %(requested_sex)s;''', 
+												con = sql_conn, params=params)
+		lookup_names['feedback'] = 'like'
+		learning_matrix = pd.concat([learning_matrix, lookup_names], axis=0)
+		learning_matrix = learning_matrix.drop_duplicates('name' )
 
-		learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
-		#learning_matrix['score_original'] = learning_matrix['score_original'].apply(lambda x: x if x != 0.5 else 0)
-		print(learning_matrix[['name', 'feedback', 'sex']])
-		learning_matrix = learning_matrix.drop(['score_popular'], axis=1)
-		learning_matrix = drop_unwanted_columns(learning_matrix)
-		learning_matrix = drop_columns_with_no_variation(learning_matrix)
-		learning_matrix = keep_only_interesting_origins(learning_matrix,5)
-		learning_matrix = drop_equal_columns(learning_matrix)
-		# Train
-		features_and_types = {}
-		for feature in learning_matrix.columns:
-		    if(re.search('score_', feature)): features_and_types[feature]='int_bigger_than_zero'
-		    if(re.search('origin_', feature)): features_and_types[feature]='bool'
-		    if(feature == 'length'): features_and_types[feature]='normal'
-		learning_matrix['feedback'] = learning_matrix['feedback'].apply(lambda x: 'like' if x else 'no_like')
-		model = Naive_bayes_model()
-		model.train(learning_matrix, features_and_types, 'feedback')
-		learning_matrix['odds_ratio'] = model.predict(learning_matrix)
-		# Make a suggestion
-		params = {'user_id':user_ID, 'requested_sex':requested_sex}
-		test_sample = pd.read_sql_query('''SELECT * FROM voornamen_pivot
-											WHERE sex = %(requested_sex)s
-											AND region = 'Vlaanderen'
-											AND name NOT IN (
+	# Change the outcome variable from string 'like' to 1
+	learning_matrix['feedback'] = learning_matrix['feedback'] == 'like'
+	
+	# Drop columns with no variation and columns with strings and columns with the number of names per year
+	learning_matrix = learning_matrix.drop(['origin','meaning','closest_match','closest_match_origin', 'origin_feature'], axis=1)
+	for column in learning_matrix.columns:
+		if(column in ['name','feedback', 'sex', 'region']): continue
+		if(len(np.unique(learning_matrix[column]))==1):
+			learning_matrix = learning_matrix.drop(column, axis=1)
+	learning_matrix = learning_matrix.drop([feature for feature in learning_matrix.columns if re.search('[0-9]{4}', feature)], axis=1)
+
+	# Drop equal columns
+	columns_to_drop = []
+	for index, column_1 in enumerate(learning_matrix.columns):
+		if(column_1 in ['name','feedback', 'sex', 'region']): continue
+		for index_column_2 in np.arange(index+1, len(learning_matrix.columns)):
+			column_2 = learning_matrix.columns[index_column_2]
+			if(column_2 in ['name','feedback', 'sex', 'region']): continue
+			if(sum(learning_matrix[column_1] == learning_matrix[column_2]) == len(learning_matrix)):
+				columns_to_drop.extend([column_2])
+	columns_to_drop = np.unique(columns_to_drop)
+	learning_matrix = learning_matrix.drop(columns_to_drop, axis=1)
+
+	# Features
+	features = list(learning_matrix.columns)
+	to_remove = ['name', 'sex', 'region','feedback', 'all_ages', 'between18and64', 'minus18', 'plus64']
+	features = [feature for feature in features if feature not in to_remove]
+	features = [feature for feature in features if re.search('[0-9]{4}', feature) is None]
+	X = learning_matrix[features].fillna(0).copy()
+	y = learning_matrix['feedback']
+	
+	# Train the model
+	rf = RandomForestClassifier(n_estimators = 10, max_features = int(np.ceil(len(features)/2)))
+	grid = {'max_depth':[2,4,6,8,10],'min_samples_leaf':[1,2,4]}
+	grid_search = GridSearchCV(estimator = rf, param_grid = grid, scoring='recall')
+	grid_search.fit(X = X, y = y)
+	trained_rf = grid_search.best_estimator_
+	feature_importances = pd.DataFrame({'importances': trained_rf.feature_importances_, 'features':features})
+	feature_importances = feature_importances.sort_values('importances', ascending=False)
+	
+	# Train a decission tree with only one cut based on the most important feature of RF to query a small test sample
+	best_feature = feature_importances.iloc[0]['features']
+	clf = DecisionTreeClassifier(max_depth=1, class_weight='balanced')
+	clf.fit(X = X[[best_feature]], y = y)
+	temp_treshold =  clf.tree_.threshold[0]
+
+	# Write the best feature away
+	dict_to_store = {'best_feature':best_feature, 'user_id': user_ID, 'requested_sex':requested_sex, 
+						'value_left_child': clf.tree_.value[1][0][0], 'value_right_child': clf.tree_.value[1][0][1],
+						'treshold' :  clf.tree_.threshold[0], 'len_training_data':len(learning_matrix)}
+	write_dict_to_sql_usage(dict_to_store, 'decision_trees')
+
+	# Query the testsample, by using the treshold of the classifiction tree
+	if(clf.tree_.value[1][0][0] <  clf.tree_.value[1][0][1]):
+		if(type(X[[best_feature]].iloc[0,0]) == np.bool_): temp_treshold = True
+		# If numeric, apply safety margin for query. As the number of samples in the training dataset is very small,
+		# it might be that the boundary for the query doesn't get samples out of the database
+		print(type(X[[best_feature]].iloc[0,0]))
+		if(type(X[[best_feature]].iloc[0,0]) == np.float64): temp_treshold = temp_treshold*1.25
+		print('%s needs to be smaller than %f' %(best_feature, temp_treshold))
+		query = '''SELECT * FROM voornamen_pivot_2
+										WHERE region = 'Vlaanderen'
+										AND sex = %(requested_sex)s
+										AND best_feature < %(treshold)s 
+										AND name NOT IN (
+												SELECT name FROM feedback WHERE user_id = %(user_id)s )
+										AND name NOT IN(
+											SELECT name FROM awaiting_feedback
+											WHERE user_id = %(user_id)s
+											AND requested_sex = %(requested_sex)s
+											AND session_id = %(session_id)s )
+										ORDER BY RANDOM() LIMIT 100 '''.replace('best_feature', best_feature)
+	else:
+		if(type(X[[best_feature]].iloc[0,0]) == np.bool_): temp_treshold = False
+		if(type(X[[best_feature]].iloc[0,0]) == np.float64): temp_treshold = temp_treshold*0.75
+		print('%s needs to be bigger than %f' %(best_feature,temp_treshold))
+		query = '''SELECT * FROM voornamen_pivot_2
+										WHERE region = 'Vlaanderen'
+										AND sex = %(requested_sex)s
+										AND best_feature > %(treshold)s
+										AND name NOT IN (
 												SELECT name 
 												FROM feedback
-												WHERE user_id = %(user_id)s
-											) ORDER BY RANDOM() LIMIT 1000''', con = sql_conn, params=params)
-		test_sample = test_sample.drop(['sex', 'region'], axis = 1)
-		#if(names_already_in_frontend):
-		#	test_sample = test_sample.loc[~test_sample['name'].isin(names_already_in_frontend),:]
-		#test_sample['score_original'] = test_sample['score_original'].apply(lambda x: x if x != 0.5 else 0)
-		test_sample['odds_ratio'] = model.predict(test_sample)
-		# Do some other kind of prior calculation
-		#test_sample['odds_ratio'] = test_sample['odds_ratio'] * test_sample['minus18'] / np.sum(test_sample['minus18'])
+												WHERE user_id = %(user_id)s )
+										AND name NOT IN(
+											SELECT name
+											FROM awaiting_feedback
+											WHERE user_id = %(user_id)s
+											AND requested_sex = %(requested_sex)s
+											AND session_id = %(session_id)s )
+										ORDER BY RANDOM() LIMIT 100   '''.replace('best_feature', best_feature)
+	params = {'user_id':user_ID,'session_id':session_ID,'requested_sex':requested_sex, 
+						'best_feature':best_feature, 'treshold':temp_treshold}
+	test_sample = pd.read_sql_query(sql = query, con = sql_conn, params=params)
 
-		# Export for debug
-		#test_sample_export = test_sample[['name','odds_ratio', 'minus18']].copy()
-		#test_sample_export['name'] = test_sample_export['name'].str.encode('utf-8')
-		#test_sample_export.to_csv('odds.csv', index=False)
-		test_sample = test_sample.sort_values(by = 'odds_ratio', axis=0, ascending=False).iloc[:20,].sample(how_many)
-		suggestion = test_sample['name'].tolist()
-		return jsonify(names = suggestion, sex = requested_sex)
+	# Predict the test sample
+	test_sample = test_sample.drop(['sex', 'region'], axis = 1)
+	test_sample['predictions'] = trained_rf.predict_proba(X = test_sample[features].fillna(0))[:,1]
+	print(test_sample[['predictions', 'name']].sort_values('predictions', ascending=False).head(5))
+	suggestion = list(test_sample[['predictions', 'name']].sort_values('predictions', ascending=False)['name'].head(how_many).values)
+	store_names_awaiting_feedback(suggestion, requested_sex, user_ID, session_ID)	
+	return jsonify(names = suggestion, sex = requested_sex)
+
+@application.route('/export', methods=['GET'])
+def export():
+	session_ID = request.args.get('session_ID')
+	user_ID = request.args.get('user_ID')
+	logged_in = request.args.get('logged_in')
+	if(logged_in is False):
+		print('requesting csv but not logged in')
+		return None
+
+	# Get everything back from the user
+	params = {'user_id':user_ID}
+	query = '''SELECT voornamen_pivot.*, feedback.feedback
+			FROM voornamen_pivot_2 voornamen_pivot, feedback
+			WHERE voornamen_pivot.name = feedback.name
+			AND voornamen_pivot.region = 'Vlaanderen'
+			AND feedback.user_id = %(user_id)s;'''
+	learning_matrix = pd.read_sql_query(sql = query, con = sql_conn, params=params)
+	# Add all the names with letter m as a start
+	query = '''SELECT * FROM voornamen_pivot_2
+										WHERE region = 'Vlaanderen'
+										AND lower(substring(name from 1 for 1)) = 'm' 
+										AND name NOT IN (
+												SELECT name 
+												FROM feedback
+												WHERE user_id = %(user_id)s )'''
+	test_sample = pd.read_sql_query(sql = query, con = sql_conn, params=params)	
+	export_csv = pd.concat([learning_matrix, test_sample], axis = 0)
+	print('Shape of export csv : {} '.format(export_csv.shape))
+
+	csv_filename =  "generated_csvs/learning_matrix_" + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.csv'
+	if not os.path.exists('static/generated_csvs'):
+		os.makedirs('static/generated_csvs')
+
+	export_csv = export_csv.to_csv( 'static/' + csv_filename, sep = ",", index=False, encoding = 'utf-8')
+	return jsonify(file_link = csv_filename)
 
 @application.route('/get_stats', methods=['GET'])
 def get_stats():
 	
-	# Request name info
+	# Request name info, for safety encode utf8 and then back to unicode. 
+	# Question: what happens for requests that come from other kinds of browsers?
 	name_1 = request.args.get('name_1').strip().title()
-	#name_1 = name_1[0].upper() + name_1[1:] 
 	name_2 = ''
 	sex_name_1 = ''
 	sex_name_2 = request.args.get('sex_name_2')
 	session_ID = request.args.get('session_ID')
 	user_ID = request.args.get('user_ID')
-	from_landing_page = request.args.get('from_landing_page')
-	print('User request: name 1: %s of sex %s , from landing page : %s' %(name_1, sex_name_1, str(from_landing_page)))
-
-	# Store away Lookup info
-	lookup_info = {'session_id':session_ID,
-					'user_id':user_ID,
-					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
-					'name_1': name_1,
-					'name_2': name_2,
-					'sex_name_1':sex_name_1,
-					'sex_name_2':sex_name_2,
-					'from_landing_page' :from_landing_page}
-	write_dict_to_sql_usage(lookup_info, 'name_lookups')
+	from_landing_page = request.args.get('from_landing_page') == 'true'
+	print('User request: name 1: {} of sex {}, from landing page: {}'.format(name_1.encode('ascii', 'replace'), sex_name_2, from_landing_page))
 	
 	# Query name 1
 	query = '''SELECT *
-				FROM voornamen_pivot 
+				FROM voornamen_pivot_2 
 				WHERE name = %(name)s
 				AND region = 'Vlaanderen' '''
 
@@ -504,22 +635,32 @@ def get_stats():
 		name_1_meaning = 'Unknown'		
 	# Else, set return values
 	else:
-			
-		name_1_kpis = name_1_kpis.loc[name_1_kpis['all_ages'] == np.max(name_1_kpis['all_ages']),:].loc[0,:]
+		name_1_kpis = name_1_kpis.loc[name_1_kpis['all_ages'] == np.max(name_1_kpis['all_ages']),:].iloc[0,:]
 		sex_name_1 = name_1_kpis['sex']
 		name_1_ts = name_1_kpis.loc[['1995','1996','1997','1998','1999','2000','2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014']].fillna(0).values
 		name_1_meaning = name_1_kpis['meaning']
 
+	# Store away Lookup info
+	lookup_info = {'session_id':session_ID,
+					'user_id':user_ID,
+					'time':datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S.%f'),
+					'name_1': name_1.encode('utf-8'),
+					'name_2': name_2.encode('utf-8'),
+					'sex_name_1':sex_name_1,
+					'sex_name_2':sex_name_2,
+					'from_landing_page' :from_landing_page}
+	write_dict_to_sql_usage(lookup_info, 'name_lookups')
+
 	# Query name 2, if name is undefined (might be coming from landing page), select a name that is close the first name
 	if(name_2 == ''):
 		query = '''	SELECT *, public.levenshtein(%(name)s, name) as distance
-					FROM voornamen_pivot
+					FROM voornamen_pivot_2
 					WHERE sex = %(sex)s
 					AND region = 'Vlaanderen'
 					AND name <> %(name)s
 					ORDER BY distance, all_ages DESC
 					LIMIT 2;'''
-		params = {'name':str(name_1), 'sex':sex_name_1}
+		params = {'name':name_1, 'sex':sex_name_1}
 		name_2_kpis = pd.read_sql_query(sql = query, con = sql_conn, params=params)
 		if(len(name_2_kpis)==0):
 			name_2 = None
@@ -535,7 +676,7 @@ def get_stats():
 	# Query the second name in the normal way as it is defined by the user
 	else:
 		query = '''SELECT *
-				FROM voornamen_pivot 
+				FROM voornamen_pivot_2
 				WHERE name = %(name)s
 				AND region = %(region)s
 				LIMIT 1'''				
@@ -565,8 +706,8 @@ def get_stats():
 								'name_2':name_2_meaning},
 					sexes = {'name_1':sex_name_1,
 							 'name_2':sex_name_2},
-					names = {'name_1':name_1,
-							 'name_2':name_2})
+					names = {'name_1':name_1.encode('utf-8'),
+							 'name_2':name_2.encode('utf-8')})
 
 @application.route('/')
 def index():

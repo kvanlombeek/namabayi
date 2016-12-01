@@ -6,18 +6,25 @@ function create_session_info(){
     user_ID_from_cookie = find_cookie('user_ID')
     if(user_ID_from_cookie != ''){
         set_user_ID(user_ID_from_cookie)
-        console.log('User id already found, pick up session ID:')
+        window.console && console.log('User id already found, pick up session ID:')
         // User ID found in cookie, just create session ID in backend
         set_session_ID(get_session_ID(user_ID))
         return null
     }
+    height = window.innerHeight || $(window).height();
+    width = window.innerWidth || $(window).width();
+
     // No user ID found in cookie, get a new one, and store in coockie. Session ID is also created in backend
     $.get(
         url='/request_user_ID',
+        data={
+            'window_width': width,
+            'window_height':height          
+        },     
         callback=function(return_data){
             set_user_ID(return_data['user_ID'])
             set_session_ID(return_data['session_ID'])
-            console.log('New user ID: ' + user_ID + ' Session ID: ' + session_ID) 
+            window.console && console.log('New user ID: ' + user_ID + ' Session ID: ' + session_ID) 
             //setCookie('user_ID', user_ID, 100)
     })
 }
@@ -40,7 +47,7 @@ function find_cookie(cname){
         }
         if (c.indexOf(name) == 0) {
             cookie_value = c.substring(name.length, c.length);
-            console.log('Cookie ' + cname + ' found, value: ' + cookie_value)
+            window.console && console.log('Cookie ' + cname + ' found, value: ' + cookie_value)
             return cookie_value
         }
     }
@@ -48,16 +55,18 @@ function find_cookie(cname){
 }
 
 function get_session_ID(user_ID){
+    height = window.innerHeight || $(window).height();
+    width = window.innerWidth || $(window).width();
     // Request session ID from the back end
     $.get(
         url='/create_session_ID',
         data={
             'user_ID':user_ID,
-            'window_width': window.innerWidth,
-            'window_height': window.innerHeight
+            'window_width': width,
+            'window_height':height
         },
         callback=function(return_data){
-            console.log('New session ID: ' + return_data['session_ID']) 
+            window.console && console.log('New session ID: ' + return_data['session_ID']) 
             set_session_ID(return_data['session_ID'])
     })
 }

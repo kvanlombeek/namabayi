@@ -53,6 +53,7 @@ class Naive_bayes_model:
         self.features_dict = features_dict
         self.targets = np.unique(df[target])
         for feature, feature_type in features_dict.items():
+            print(feature)
             self.class_summaries[feature] = self.calculate_class_summary(df[[feature, target]], feature_type, target)
         self.calculate_priors(df, target)
         self.len_training = len(df)
@@ -71,6 +72,7 @@ class Naive_bayes_model:
             summary = df_feature_and_target.groupby(target).mean()
             summary.columns=['True']
             summary = summary.to_dict('index')
+            print(summary)
         elif(feature_type=='normal'):
             means = df_feature_and_target.groupby(target).mean()
             means.columns=['mean']

@@ -1,6 +1,5 @@
 
 flask_app/data/
-flask_app/.elasticbeanstalk/
 flask_app/venv/
 
 *.pyc
